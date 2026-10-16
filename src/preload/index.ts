@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { IpcRendererEvent } from 'electron'
-import type { Device, BackupFile } from '@shared/types'
+import type { Device, DeviceInfo, BackupFile } from '@shared/types'
 
 // Güvenli preload (prompt 4)
 // contextIsolation: true + nodeIntegration: false altında renderer'a yalnızca
@@ -8,7 +8,9 @@ import type { Device, BackupFile } from '@shared/types'
 const api = {
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   listDevices: (): Promise<Device[]> => ipcRenderer.invoke('devices:list'),
-  createBackup: (deviceId: string): Promise<BackupFile | null> =>
+  getDeviceInfo: (serial: string): Promise<DeviceInfo> =>
+    ipcRenderer.invoke('devices:info', serial),
+  createBackup: (deviceId: string): Promise<BackupFile> =>
     ipcRenderer.invoke('backup:create', deviceId),
   selectDirectory: (): Promise<string | null> =>
     ipcRenderer.invoke('dialog:select-directory'),

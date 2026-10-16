@@ -1,0 +1,45 @@
+name: Build & Release
+
+# v* etiketi itince veya manuel (workflow_dispatch) tetikleyince çalışır.
+# Windows kurulumcusu (.exe / NSIS) Windows runner'da yerel üretilir; wine gerekmez.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: npm run dist:win
+          - os: macos-latest
+            script: npm run dist:mac
+          - os: ubuntu-latest
+            script: npm run dist:linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm install --no-audit --no-fund
+        env:
+          # electron-builder kendi Electron dağıtımını indirir; postinstall ikilisini atla.
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Tip kontrolü
+        run: npm run typecheck
+
+      - name: Paketle (etiket ise GitHub Releases'a yayınla)
+        run: ${{ matrix.script }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'

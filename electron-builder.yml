@@ -29,5 +29,5 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 publish:
   provider: github
-  owner: PATRON # TODO: GitHub kullanıcı adınla değiştir
-  repo: telefon # TODO: GitHub repo adınla değiştir
+  owner: PATRON # TODO: GitHub kullanıcı adınla değiştir (otomatik güncelleme için şart)
+  repo: telefon

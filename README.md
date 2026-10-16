@@ -194,3 +194,25 @@ denemesi `second-instance` olayıyla mevcut pencereyi öne getirir.
 `src/shared/types/index.ts`: `Device`, `DeviceInfo`, `DevicePlatform`,
 `DeviceStatus`, `BackupFile`, `BackupStatus`, `ThemeMode`, `AppSettings`.
 Main ve renderer aynı tanımları `@shared/types` alias'ıyla kullanır.
+
+## ADB / Cihaz Servisi (gerçek cihaz mantığı)
+
+`src/main/services/adb.ts` gerçek cihaz işlemlerini yapar (saf Node, electron
+bağımsız — test edilebilir):
+
+- `listDevices()` — `adb devices -l` çıktısını ayrıştırır (serial, durum, model).
+- `getDeviceInfo(serial)` — `getprop` ile model/üretici/Android sürümü okur.
+- `createBackup(serial, baseDir)` — `adb pull` ile dosyaları çeker; toplam boyut
+  + sha256 manifest üretir.
+
+Yedekler `userData/backups/<cihaz>-<zaman>/` altına yazılır. adb yoksa Türkçe bir
+hata fırlatılır (renderer `hata` state'ine düşer). adb yolunu `ADB_PATH` ortam
+değişkeniyle de belirtebilirsin.
+
+## İkon ve Paketleme
+
+- `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.
+- Linux'ta Windows kurulumcusu (.exe/NSIS) üretmek wine gerektirir; bu yüzden
+  `.github/workflows/build.yml` Windows/macOS/Linux kurulumcularını CI'da
+  (yerel runner) üretir. `v*` etiketi itince GitHub Releases'a da yayınlar.
+- Kendi makinende Windows ise `npm run dist:win` doğrudan çalışır.
