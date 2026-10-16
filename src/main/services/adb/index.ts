@@ -18,7 +18,9 @@ export {
   listUnauthorized,
   enableWireless,
   connectWireless,
-  disconnectWireless
+  disconnectWireless,
+  detectConnectionType,
+  diffDevices
 } from './devices'
 export { getAdbVersion } from './version'
 export { getHistory, clearHistory } from './history'

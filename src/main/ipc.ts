@@ -2,6 +2,7 @@ import { ipcMain, dialog, app } from 'electron'
 import type { Device, DeviceInfo, BackupFile, AdbRunResult } from '@shared/types'
 import log from './logger'
 import * as adb from './services/adb'
+import { refreshDevices } from './poller'
 
 // IPC kanalları: main süreçte ipcMain.handle ile tanımlanır, preload'da
 // contextBridge ile renderer'a açılır.
@@ -34,6 +35,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('devices:info', (_e, serial: string): Promise<DeviceInfo> =>
     adb.getDeviceInfo(serial)
   )
+  ipcMain.handle('devices:refresh', () => refreshDevices())
   ipcMain.handle('devices:unauthorized', (): Promise<string[]> => adb.listUnauthorized())
 
   // Kablosuz (prompt 31)

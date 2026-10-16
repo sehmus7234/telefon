@@ -12,6 +12,12 @@ export default defineConfig({
       alias: {
         '@shared': resolve('src/shared')
       }
+    },
+    build: {
+      rollupOptions: {
+        // node-usb isteğe bağlıdır; kurulu değilse bile derlemeyi kırmasın (prompt 36).
+        external: ['usb']
+      }
     }
   },
   preload: {

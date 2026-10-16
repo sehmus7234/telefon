@@ -4,7 +4,8 @@ import log, { setupLogger } from './logger'
 import { registerIpcHandlers } from './ipc'
 import { createSplashWindow, closeSplashWindow } from './splash'
 import { setupAutoUpdater } from './updater'
-import { startDevicePolling, stopDevicePolling } from './poller'
+import { startDevicePolling, stopDevicePolling, refreshDevices } from './poller'
+import { startUsbWatcher } from './usbWatcher'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -69,6 +70,7 @@ if (!gotTheLock) {
     createSplashWindow()
     createMainWindow()
     startDevicePolling(() => mainWindow)
+    startUsbWatcher(() => void refreshDevices())
     setupAutoUpdater(() => mainWindow)
 
     app.on('activate', () => {

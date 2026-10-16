@@ -1,30 +1,28 @@
 import { useDeviceStore } from '../store/useDeviceStore'
-
-function durumEtiketi(status: string): { text: string; cls: string } {
-  switch (status) {
-    case 'online':
-      return { text: 'Bağlı', cls: 'text-green-600 dark:text-green-400' }
-    case 'offline':
-      return { text: 'Çevrimdışı', cls: 'text-gray-500 dark:text-gray-400' }
-    case 'unauthorized':
-      return { text: 'Yetkisiz', cls: 'text-amber-600 dark:text-amber-400' }
-    default:
-      return { text: 'Bağlantı yok', cls: 'text-gray-500 dark:text-gray-400' }
-  }
-}
+import DeviceStatusBadge from './DeviceStatusBadge'
 
 export default function DeviceList() {
   const cihazlar = useDeviceStore((s) => s.cihazlar)
   const seciliCihaz = useDeviceStore((s) => s.seciliCihaz)
+  const bilgiler = useDeviceStore((s) => s.bilgiler)
+  const taraniyor = useDeviceStore((s) => s.taraniyor)
   const sec = useDeviceStore((s) => s.sec)
 
-  if (cihazlar.length === 0)
-    return <p className="text-gray-500 dark:text-gray-400">Bağlı cihaz yok.</p>
+  if (cihazlar.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+        {taraniyor && (
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+        )}
+        {taraniyor ? 'Cihazlar taranıyor...' : 'Bağlı cihaz yok.'}
+      </div>
+    )
+  }
 
   return (
     <ul className="space-y-2">
       {cihazlar.map((c) => {
-        const durum = durumEtiketi(c.status)
+        const info = bilgiler[c.serialNumber ?? c.id]
         return (
           <li key={c.id}>
             <button
@@ -37,11 +35,14 @@ export default function DeviceList() {
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium">{c.name}</span>
-                <span className={`text-xs font-medium ${durum.cls}`}>{durum.text}</span>
+                <DeviceStatusBadge status={c.status} />
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {c.model} · {c.serialNumber}
+                {c.model}
+                {info?.osVersion ? ` · Android ${info.osVersion}` : ''}
+                {c.connectionType ? ` · ${c.connectionType === 'wifi' ? 'Wi-Fi' : 'USB'}` : ''}
               </div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">{c.serialNumber}</div>
               {c.status === 'unauthorized' && (
                 <div className="mt-2 rounded bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                   Telefondan izin verin: cihazda "USB hata ayıklamaya izin verilsin mi?" onayını kabul edin.

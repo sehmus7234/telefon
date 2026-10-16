@@ -6,6 +6,8 @@ export type DevicePlatform = 'android' | 'ios' | 'unknown'
 
 export type DeviceStatus = 'online' | 'offline' | 'unauthorized' | 'charging' | 'disconnected'
 
+export type ConnectionType = 'usb' | 'wifi'
+
 export interface Device {
   id: string
   name: string
@@ -13,6 +15,7 @@ export interface Device {
   platform: DevicePlatform
   serialNumber?: string
   status: DeviceStatus
+  connectionType?: ConnectionType
   batteryLevel?: number
   storageTotalBytes?: number
   storageFreeBytes?: number

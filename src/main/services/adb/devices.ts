@@ -1,4 +1,4 @@
-import type { Device, DeviceStatus } from '@shared/types'
+import type { Device, DeviceStatus, ConnectionType } from '@shared/types'
 import { adbExec } from './exec'
 import { parseDevices } from './parse'
 
@@ -15,6 +15,27 @@ function toStatus(state: string): DeviceStatus {
   }
 }
 
+// Serial formatına göre bağlantı türünü tahmin eder (prompt 46).
+// Kablosuz cihazlar `adb connect ip:port` ile bağlanır, serial ip:port olur.
+export function detectConnectionType(serial: string): ConnectionType {
+  if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(serial)) return 'wifi' // IPv4:port
+  if (/^\[[0-9a-f:]+\]:\d+$/i.test(serial)) return 'wifi' // [IPv6]:port
+  return 'usb'
+}
+
+// Önceki/yeni liste farkı; cihazlar seri numarasına göre benzersiz eşleştirilir (prompt 40).
+export function diffDevices(
+  prev: Device[],
+  next: Device[]
+): { added: Device[]; removed: Device[] } {
+  const key = (d: Device): string => d.serialNumber ?? d.id
+  const prevSet = new Set(prev.map(key))
+  const nextSet = new Set(next.map(key))
+  const added = next.filter((d) => !prevSet.has(key(d)))
+  const removed = prev.filter((d) => !nextSet.has(key(d)))
+  return { added, removed }
+}
+
 // Bağlı cihazları listeler: `adb devices -l` (prompt 22).
 export async function listDevices(): Promise<Device[]> {
   const out = await adbExec(['devices', '-l'])
@@ -25,6 +46,7 @@ export async function listDevices(): Promise<Device[]> {
     platform: 'android',
     serialNumber: d.serial,
     status: toStatus(d.state),
+    connectionType: detectConnectionType(d.serial),
     lastConnectedAt: d.state === 'device' ? new Date().toISOString() : undefined
   }))
 }

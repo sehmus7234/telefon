@@ -5,6 +5,7 @@ export type {
   DeviceInfo,
   DevicePlatform,
   DeviceStatus,
+  ConnectionType,
   BackupFile,
   BackupStatus,
   ThemeMode,

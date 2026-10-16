@@ -20,6 +20,7 @@ function subscribe<T>(channel: string, callback: (payload: T) => void): () => vo
 const api = {
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   listDevices: (): Promise<Device[]> => ipcRenderer.invoke('devices:list'),
+  refreshDevices: (): Promise<Device[]> => ipcRenderer.invoke('devices:refresh'),
   getDeviceInfo: (serial: string): Promise<DeviceInfo> =>
     ipcRenderer.invoke('devices:info', serial),
   listUnauthorized: (): Promise<string[]> => ipcRenderer.invoke('devices:unauthorized'),
@@ -48,9 +49,15 @@ const api = {
   ): Promise<string> => ipcRenderer.invoke('adb:run', args, opts),
   cancelCommand: (runId: string): Promise<boolean> => ipcRenderer.invoke('adb:cancel', runId),
 
-  // Olaylar
+  // Olaylar (prompt 48)
   onDevicesChanged: (cb: (devices: Device[]) => void): (() => void) =>
     subscribe('devices:changed', cb),
+  onDeviceConnected: (cb: (device: Device) => void): (() => void) =>
+    subscribe('device:connected', cb),
+  onDeviceRemoved: (cb: (device: Device) => void): (() => void) =>
+    subscribe('device:removed', cb),
+  onDeviceInfo: (cb: (payload: { serial: string; info: DeviceInfo }) => void): (() => void) =>
+    subscribe('device:info', cb),
   onDevicesError: (cb: (message: string) => void): (() => void) =>
     subscribe('devices:error', cb),
   onAdbResult: (cb: (result: AdbRunResult) => void): (() => void) =>

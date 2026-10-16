@@ -220,6 +220,34 @@ için `resources/platform-tools/` klasörüne koy (prompt 18).
 
 Yedekler `userData/backups/<cihaz>-<zaman>/` altına yazılır.
 
+## Cihaz Algılama (prompt 36-50)
+
+- **USB otomatik algılama (36):** İki katman. Güvenilir olanı `poller.ts` — 2 saniyede
+  bir `adb devices` çeker, `diffDevices` ile bağlanan/çıkan cihazları bulur. İsteğe
+  bağlı `usbWatcher.ts` node-usb (`usb.on('attach'/'detach')`) ile USB tak/çıkarmayı
+  anında yakalayıp taramayı tetikler; kurulu değilse sessizce devre dışı kalır.
+  node-usb native modüldür: `npm i usb && npx electron-rebuild -f -w usb` gerekir;
+  electron-builder için `npmRebuild: false` + `buildDependenciesFromSource: true`.
+- **Bildirim (37/38):** Cihaz bağlanınca/çıkarılınca main `device:connected` /
+  `device:removed` gönderir; renderer toast gösterir (`useToastStore` + `Toasts`).
+- **Dropdown (39):** Birden fazla cihazda `DeviceSelect` seçim kutusu gösterilir.
+- **Benzersiz kimlik (40):** Cihazlar `serialNumber` ile eşleştirilir; aynı cihaz
+  tekrar bağlanınca liste tekrarlanmaz.
+- **Hook (41/42):** `useAdbBridge` main olaylarını store'a bağlar; cihaz listesi
+  `useDeviceStore` içinde, güncellemeler otomatik yansır.
+- **Rozet (43):** `DeviceStatusBadge` — yeşil bağlı, sarı yetkisiz, kırmızı çevrimdışı.
+- **Spinner (44):** İlk taramada ve manuel yenilemede yükleme göstergesi.
+- **Hata (45):** `devices:error` ile anlamlı Türkçe hata (banner + toast).
+- **Bağlantı türü (46):** `detectConnectionType` serial formatına göre USB/Wi-Fi
+  ayırır; cihaz kartında gösterilir.
+- **Yenileme (47):** "Yenile" butonu `devices:refresh` ile anında tarama tetikler.
+- **Event emitter (48):** `webContents.send` kanalları: `devices:changed`,
+  `device:connected`, `device:removed`, `device:info`, `devices:error`.
+- **Otomatik bilgi (49):** Yeni cihaz bağlanınca `getDeviceInfo` çekilir ve
+  `device:info` ile gönderilir (Android sürümü/üretici).
+- **Kalıcılık (50):** Cihaz listesi `localStorage`'a yazılır; uygulama yeniden
+  açılınca son cihazlar gösterilir (ilk tarama gerçek listeyi getirir).
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.
