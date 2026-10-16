@@ -4,6 +4,7 @@ import log, { setupLogger } from './logger'
 import { registerIpcHandlers } from './ipc'
 import { createSplashWindow, closeSplashWindow } from './splash'
 import { setupAutoUpdater } from './updater'
+import { startDevicePolling, stopDevicePolling } from './poller'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -67,12 +68,15 @@ if (!gotTheLock) {
     registerIpcHandlers()
     createSplashWindow()
     createMainWindow()
+    startDevicePolling(() => mainWindow)
     setupAutoUpdater(() => mainWindow)
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
     })
   })
+
+  app.on('will-quit', () => stopDevicePolling())
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()

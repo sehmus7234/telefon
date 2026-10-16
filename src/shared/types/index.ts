@@ -4,7 +4,7 @@
 
 export type DevicePlatform = 'android' | 'ios' | 'unknown'
 
-export type DeviceStatus = 'online' | 'offline' | 'charging' | 'disconnected'
+export type DeviceStatus = 'online' | 'offline' | 'unauthorized' | 'charging' | 'disconnected'
 
 export interface Device {
   id: string
@@ -51,4 +51,30 @@ export interface AppSettings {
   theme: ThemeMode
   backupDirectory: string
   autoUpdate: boolean
+}
+
+// ADB katmanı tipleri (main <-> renderer arasında paylaşılır)
+export interface AdbStatusInfo {
+  installed: boolean
+  path: string | null
+}
+
+export interface AdbHistoryEntry {
+  id: number
+  command: string
+  timestamp: string
+  code: number | null
+  durationMs: number
+  timedOut?: boolean
+  aborted?: boolean
+}
+
+export interface AdbRunResult {
+  runId: string
+  stdout: string
+  stderr: string
+  code: number | null
+  timedOut: boolean
+  aborted: boolean
+  error?: string
 }

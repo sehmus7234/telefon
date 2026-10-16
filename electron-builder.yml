@@ -6,9 +6,15 @@ productName: Telefon
 directories:
   buildResources: build
   output: release
+extraResources:
+  - from: resources/platform-tools
+    to: platform-tools
+    filter:
+      - '**/*'
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!resources/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{README.md,CHANGELOG.md,dev-app-update.yml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'

@@ -1,19 +1,33 @@
 import { useEffect } from 'react'
 import { useTheme } from './hooks/useTheme'
-import { useDeviceStore } from './store/useDeviceStore'
 import { useThemeStore } from './store/useThemeStore'
+import { useDeviceStore } from './store/useDeviceStore'
+import { useAdbStore } from './store/useAdbStore'
+import { useAdbBridge } from './hooks/useAdbBridge'
+import AdbStatusBar from './components/AdbStatusBar'
 import DeviceList from './components/DeviceList'
+import WirelessConnect from './components/WirelessConnect'
+import CommandConsole from './components/CommandConsole'
 
 export default function App() {
   useTheme()
-  const listele = useDeviceStore((s) => s.listele)
+  useAdbBridge()
+
   const mod = useThemeStore((s) => s.mod)
   const tema = useThemeStore((s) => s.tema)
   const setMod = useThemeStore((s) => s.setMod)
 
+  const durumYukle = useAdbStore((s) => s.durumYukle)
+  const surumYukle = useAdbStore((s) => s.surumYukle)
+  const gecmisYukle = useAdbStore((s) => s.gecmisYukle)
+  const adbHata = useAdbStore((s) => s.hata)
+
   useEffect(() => {
-    void listele()
-  }, [listele])
+    void durumYukle()
+    void surumYukle()
+    void gecmisYukle()
+    void useDeviceStore.getState().listele()
+  }, [durumYukle, surumYukle, gecmisYukle])
 
   const temaDegistir = () => {
     setMod(tema === 'dark' ? 'light' : 'dark')
@@ -30,8 +44,16 @@ export default function App() {
           Tema: {mod} ({tema})
         </button>
       </header>
-      <main className="p-6">
+      <main className="space-y-4 p-6">
+        {adbHata && (
+          <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
+            {adbHata}
+          </div>
+        )}
+        <AdbStatusBar />
         <DeviceList />
+        <WirelessConnect />
+        <CommandConsole />
       </main>
     </div>
   )

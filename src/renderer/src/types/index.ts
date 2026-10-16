@@ -8,5 +8,8 @@ export type {
   BackupFile,
   BackupStatus,
   ThemeMode,
-  AppSettings
+  AppSettings,
+  AdbStatusInfo,
+  AdbHistoryEntry,
+  AdbRunResult
 } from '@shared/types'

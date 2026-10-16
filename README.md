@@ -195,19 +195,30 @@ denemesi `second-instance` olayıyla mevcut pencereyi öne getirir.
 `DeviceStatus`, `BackupFile`, `BackupStatus`, `ThemeMode`, `AppSettings`.
 Main ve renderer aynı tanımları `@shared/types` alias'ıyla kullanır.
 
-## ADB / Cihaz Servisi (gerçek cihaz mantığı)
+## ADB Servisi (src/main/services/adb/)
 
-`src/main/services/adb.ts` gerçek cihaz işlemlerini yapar (saf Node, electron
-bağımsız — test edilebilir):
+Saf Node (electron bağımsız, test edilebilir) modüler ADB katmanı. Dosyalar:
 
-- `listDevices()` — `adb devices -l` çıktısını ayrıştırır (serial, durum, model).
-- `getDeviceInfo(serial)` — `getprop` ile model/üretici/Android sürümü okur.
-- `createBackup(serial, baseDir)` — `adb pull` ile dosyaları çeker; toplam boyut
-  + sha256 manifest üretir.
+- `paths.ts` — adb binary'sini platforma göre bulur (prompt 17/33); `isAdbInstalled`.
+- `exec.ts` — `child_process.spawn` tabanlı sarmalayıcı (prompt 16); `adbExec(args)`
+  => Promise<string> (prompt 20), `-s <serial>` (25), 30 sn timeout (26), abort (34),
+  stderr yakalama (32).
+- `queue.ts` — aynı anda tek komut çalıştıran kuyruk (prompt 35).
+- `history.ts` — son 50 komut (prompt 27).
+- `parse.ts` — satır ayırma + cihaz çıktısı + sürüm ayrıştırma (prompt 21).
+- `server.ts` — start-server / kill-server / yeniden başlat (prompt 19/29).
+- `devices.ts` — `adb devices -l` (22), durum kontrolü device/unauthorized/offline
+  (23/24), kablosuz tcpip + connect + disconnect (31).
+- `version.ts` — `adb version` (28).
+- `backup.ts` — `getDeviceInfo` + `createBackup` (adb pull + boyut + sha256 manifest).
 
-Yedekler `userData/backups/<cihaz>-<zaman>/` altına yazılır. adb yoksa Türkçe bir
-hata fırlatılır (renderer `hata` state'ine düşer). adb yolunu `ADB_PATH` ortam
-değişkeniyle de belirtebilirsin.
+Main süreç `poller.ts` 2 saniyede bir cihaz listesini yeniler (prompt 30); renderer
+`devices:changed` olayıyla otomatik güncellenir. adb kurulu değilse `devices:error`
+ile arayüzde uyarı gösterilir (prompt 17). Yetkisiz cihazlarda "Telefondan izin
+verin" uyarısı gösterilir (prompt 24). ADB binary'sini uygulama içine paketlemek
+için `resources/platform-tools/` klasörüne koy (prompt 18).
+
+Yedekler `userData/backups/<cihaz>-<zaman>/` altına yazılır.
 
 ## İkon ve Paketleme
 

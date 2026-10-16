@@ -9,6 +9,7 @@ interface DeviceState {
   hata: string | null
   listele: () => Promise<void>
   sec: (cihaz: Device | null) => void
+  ayarla: (cihazlar: Device[]) => void
   temizleHata: () => void
 }
 
@@ -31,5 +32,6 @@ export const useDeviceStore = create<DeviceState>((set, get) => ({
   },
 
   sec: (cihaz) => set({ seciliCihaz: cihaz }),
+  ayarla: (cihazlar) => set({ cihazlar, seciliCihaz: get().seciliCihaz ?? cihazlar[0] ?? null }),
   temizleHata: () => set({ hata: null })
 }))
