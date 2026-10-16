@@ -21,5 +21,7 @@ export type {
   BackupStageResult,
   TestStatus,
   TestResult,
-  TestReport
+  TestReport,
+  FileEntry,
+  FileKind
 } from '@shared/types'

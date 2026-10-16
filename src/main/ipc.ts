@@ -1,5 +1,6 @@
-import { ipcMain, dialog, app, shell } from 'electron'
+import { ipcMain, dialog, app, shell, nativeImage } from 'electron'
 import { join } from 'path'
+import { promises as fs } from 'fs'
 import type {
   Device,
   DeviceInfo,
@@ -15,6 +16,7 @@ import { startScrcpy } from './scrcpy'
 import { runBackup, restoreBackup, estimateBackup } from './services/backup'
 import { addBackup, listBackups, getBackup, deleteBackup } from './db'
 import { runTests, exportPdf } from './services/tests'
+import { listFiles, pullFile, pushFile, deleteFile, createFolder } from './services/files'
 
 // IPC kanalları: main süreçte ipcMain.handle ile tanımlanır, preload'da
 // contextBridge ile renderer'a açılır.
@@ -114,6 +116,29 @@ export function registerIpcHandlers(): void {
     await exportPdf(report, file)
     void shell.openPath(file)
     return file
+  })
+
+  // Dosya işlemleri (prompt 129-140)
+  ipcMain.handle('files:list', (_e, serial: string, path: string) => listFiles(serial, path))
+  ipcMain.handle('files:pull', (_e, serial: string, remotePath: string) =>
+    pullFile(serial, remotePath, app.getPath('downloads'))
+  )
+  ipcMain.handle('files:push', (_e, serial: string, localPath: string, remoteDir: string) =>
+    pushFile(serial, localPath, remoteDir)
+  )
+  ipcMain.handle('files:delete', (_e, serial: string, remotePath: string) =>
+    deleteFile(serial, remotePath)
+  )
+  ipcMain.handle('files:mkdir', (_e, serial: string, parent: string, name: string) =>
+    createFolder(serial, parent, name)
+  )
+  ipcMain.handle('files:thumbnail', async (_e, serial: string, remotePath: string) => {
+    const tmpDir = join(app.getPath('temp'), 'telefon-thumbs')
+    await fs.mkdir(tmpDir, { recursive: true })
+    const localPath = await pullFile(serial, remotePath, tmpDir)
+    const img = nativeImage.createFromPath(localPath)
+    if (img.isEmpty()) return null
+    return img.resize({ width: 128 }).toDataURL()
   })
 
   // Komut geçmişi (prompt 27)

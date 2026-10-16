@@ -147,6 +147,24 @@ export interface BackupHistoryItem {
 
 export type TestStatus = 'pass' | 'fail' | 'error'
 
+export type FileKind =
+  | 'folder'
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'document'
+  | 'archive'
+  | 'other'
+
+export interface FileEntry {
+  name: string
+  path: string
+  sizeBytes: number
+  isDir: boolean
+  permissions?: string
+  modified?: string
+}
+
 export interface TestResult {
   id: string
   name: string

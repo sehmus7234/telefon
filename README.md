@@ -342,6 +342,20 @@ listeler; dokunmatik ekran `ABS_MT_*` olaylarıyla görünür. Canlı izleme:
 Notlar: renk testi ile hoparlör/mikrofon doğrulaması görsel/işitsel olduğu için
 komutlar ilgili ekranı/uygulamayı açar; otomatik pass/fail komut çıktısına göre belirlenir.
 
+## Dosya Tarayıcı (prompt 129-140)
+
+`src/main/services/files/` + `views/FilesView.tsx`:
+
+- `listFiles` (129) — `adb shell ls -la` çıktısını parse eder (ad, boyut, klasör, izin, tarih).
+- `pullFile` (130), `pushFile` (131), `deleteFile` (132), `createFolder` (133).
+- Arama filtreleme (134), `formatBytes` ile okunabilir boyut (135).
+- Tür ikonları (136): klasör/resim/video/müzik/belge/arşiv (`fileKind`).
+- Sürükle-bırak yükleme (137) — `webUtils.getPathForFile` ile yerel yol alınır.
+- Çoklu seçim + toplu işlem (138) — checkbox + toplu indir/sil.
+- Önizleme (139) — resim dosyaları `nativeImage.resize` ile 128px thumbnail'e çevrilir
+  ve data URL olarak gösterilir.
+- Sağ tık menüsü (140) — Aç / İndir / Sil.
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.

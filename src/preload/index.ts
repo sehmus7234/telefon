@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type {
   Device,
@@ -12,7 +12,8 @@ import type {
   BackupHistoryItem,
   BackupProgress,
   BackupReport,
-  TestReport
+  TestReport,
+  FileEntry
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -73,6 +74,21 @@ const api = {
   runTests: (serial: string): Promise<TestReport> => ipcRenderer.invoke('tests:run', serial),
   exportTestPdf: (report: TestReport): Promise<string> =>
     ipcRenderer.invoke('tests:export-pdf', report),
+
+  // Dosya işlemleri (129-140)
+  listFiles: (serial: string, path: string): Promise<FileEntry[]> =>
+    ipcRenderer.invoke('files:list', serial, path),
+  pullFile: (serial: string, remotePath: string): Promise<string> =>
+    ipcRenderer.invoke('files:pull', serial, remotePath),
+  pushFile: (serial: string, localPath: string, remoteDir: string): Promise<void> =>
+    ipcRenderer.invoke('files:push', serial, localPath, remoteDir),
+  deleteFile: (serial: string, remotePath: string): Promise<void> =>
+    ipcRenderer.invoke('files:delete', serial, remotePath),
+  createFolder: (serial: string, parent: string, name: string): Promise<void> =>
+    ipcRenderer.invoke('files:mkdir', serial, parent, name),
+  getThumbnail: (serial: string, remotePath: string): Promise<string | null> =>
+    ipcRenderer.invoke('files:thumbnail', serial, remotePath),
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
   // Olaylar (prompt 48)
   onDevicesChanged: (cb: (devices: Device[]) => void): (() => void) =>
