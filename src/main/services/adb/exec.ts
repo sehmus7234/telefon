@@ -2,6 +2,8 @@ import { spawn } from 'child_process'
 import { findAdbPath } from './paths'
 import { adbQueue } from './queue'
 import { record } from './history'
+import { humanizeAdbError } from '../errors/adbError'
+import { recordAdbCommand } from '../errors/performance'
 
 export const DEFAULT_TIMEOUT_MS = 30_000
 
@@ -96,14 +98,16 @@ function execute(args: string[], options: AdbExecOptions = {}): Promise<AdbExecR
   return adbQueue.run(async () => {
     const started = Date.now()
     const result = await runSpawn(args, options)
+    const durationMs = Date.now() - started
     record({
       command: ['adb', ...(options.serial ? ['-s', options.serial] : []), ...args].join(' '),
       timestamp: new Date().toISOString(),
       code: result.code,
-      durationMs: Date.now() - started,
+      durationMs,
       timedOut: result.timedOut,
       aborted: result.aborted
     })
+    recordAdbCommand(durationMs) // performans metriği (158)
     return result
   })
 }
@@ -114,7 +118,8 @@ export function adbExec(args: string[], options: AdbExecOptions = {}): Promise<s
     if (r.timedOut) throw new Error(`adb komutu zaman aşımına uğradı (${args[0]}).`)
     if (r.aborted) throw new Error(`adb komutu iptal edildi (${args[0]}).`)
     if (r.code !== 0 && r.code !== null) {
-      throw new Error(`adb komutu hata kodu ${r.code} döndürdü (${args[0]}): ${r.stderr.trim()}`)
+      // Kullanıcı dostu hata mesajı (152).
+      throw new Error(humanizeAdbError(r.stderr.trim() || `adb ${args[0]} hata kodu ${r.code}`))
     }
     return r.stdout
   })

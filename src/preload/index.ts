@@ -17,7 +17,12 @@ import type {
   AdbKeyInfo,
   DangerousCommandInfo,
   SessionState,
-  SecurityUpdateStatus
+  SecurityUpdateStatus,
+  ErrorLogEntry,
+  CrashSummary,
+  PerformanceMetrics,
+  MemoryStatus,
+  ErrorReportResult
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -134,6 +139,20 @@ const api = {
     ipcRenderer.invoke('security:updates:check'),
   getSecurityUpdatesStatus: (): Promise<SecurityUpdateStatus | null> =>
     ipcRenderer.invoke('security:updates:status'),
+
+  // Hata yönetimi + teşhis (151-160)
+  getRecentErrors: (limit?: number): Promise<ErrorLogEntry[]> =>
+    ipcRenderer.invoke('errors:list', limit),
+  logError: (level: string, source: string, message: string, stack?: string): Promise<void> =>
+    ipcRenderer.invoke('errors:log', level, source, message, stack),
+  exportErrorReport: (): Promise<ErrorReportResult> =>
+    ipcRenderer.invoke('errors:export-report'),
+  getCrashSummary: (): Promise<CrashSummary> => ipcRenderer.invoke('errors:crash-summary'),
+  getPerformanceMetrics: (): Promise<PerformanceMetrics> => ipcRenderer.invoke('perf:metrics'),
+  getMemoryStatus: (): Promise<MemoryStatus> => ipcRenderer.invoke('memory:status'),
+  getDebugMode: (): Promise<boolean> => ipcRenderer.invoke('debug:get'),
+  setDebugMode: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('debug:set', enabled),
+  quitSafely: (): Promise<boolean> => ipcRenderer.invoke('app:quit-safely'),
 
   // Olaylar (prompt 48)
   onDevicesChanged: (cb: (devices: Device[]) => void): (() => void) =>

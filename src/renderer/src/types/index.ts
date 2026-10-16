@@ -27,5 +27,11 @@ export type {
   AdbKeyInfo,
   DangerousCommandInfo,
   SessionState,
-  SecurityUpdateStatus
+  SecurityUpdateStatus,
+  PerformanceMetrics,
+  MemoryStatus,
+  MemoryTrend,
+  ErrorLogEntry,
+  CrashSummary,
+  ErrorReportResult
 } from '@shared/types'

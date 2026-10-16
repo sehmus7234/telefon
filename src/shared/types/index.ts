@@ -250,3 +250,47 @@ export interface SecurityUpdateStatus {
   advisories: string[]
   error?: string
 }
+
+// --- Hata/teşhis tipleri (prompt 151-160) ---
+
+export interface PerformanceMetrics {
+  startupMs: number
+  uptimeMs: number
+  memoryRssMb: number
+  memoryHeapUsedMb: number
+  memoryHeapTotalMb: number
+  adbCommandCount: number
+  avgAdbCommandMs: number
+}
+
+export type MemoryTrend = 'stable' | 'growing' | 'critical'
+
+export interface MemoryStatus {
+  heapUsedMb: number
+  heapTotalMb: number
+  rssMb: number
+  trend: MemoryTrend
+  samples: number
+}
+
+export interface ErrorLogEntry {
+  id: number
+  timestamp: string
+  level: string
+  source: string
+  message: string
+  stack?: string
+}
+
+export interface CrashSummary {
+  count: number
+  lastCrashAt: string | null
+  topMessages: { message: string; count: number }[]
+}
+
+export interface ErrorReportResult {
+  filePath: string | null
+  entryCount: number
+  crashCount: number
+  summary: string
+}

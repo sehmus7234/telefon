@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useThemeStore } from '../store/useThemeStore'
 import SecuritySettings from '../components/SecuritySettings'
+import ErrorDiagnostics from '../components/ErrorDiagnostics'
 import type { ThemeMode } from '@shared/types'
 
 function load(key: string, def: string): string {
@@ -99,6 +100,8 @@ export default function SettingsView() {
       </div>
 
       <SecuritySettings />
+
+      <ErrorDiagnostics />
     </div>
   )
 }

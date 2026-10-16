@@ -1,13 +1,24 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
-import log, { setupLogger } from './logger'
+import log, { setupLogger, setDebugMode } from './logger'
 import { registerIpcHandlers } from './ipc'
 import { createSplashWindow, closeSplashWindow } from './splash'
 import { setupAutoUpdater } from './updater'
 import { startDevicePolling, stopDevicePolling, refreshDevices } from './poller'
 import { startUsbWatcher } from './usbWatcher'
-import { initDb, closeDb } from './db'
+import { initDb, closeDb, getSetting } from './db'
 import { initSecretStore } from './services/security'
+import {
+  initErrorLog,
+  logError,
+  flushErrorLog,
+  initPerformance,
+  startMemoryMonitor,
+  stopMemoryMonitor,
+  writeCrashReport,
+  setDebug,
+  setDebugSink
+} from './services/errors'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -54,6 +65,22 @@ function createMainWindow(): void {
 // Tek örnek kilidi (prompt 13): ikinci açılış mevcut pencereyi öne getirir.
 const gotTheLock = app.requestSingleInstanceLock()
 
+// Kritik hatalarda güvenli kapatma (156): logları boşalt, DB'yi kapat, çık.
+function shutdownSafely(reason: string): void {
+  log.error('Kritik hata — uygulama güvenli şekilde kapatılıyor:', reason)
+  stopDevicePolling()
+  stopMemoryMonitor()
+  void flushErrorLog().finally(() => {
+    try {
+      closeDb()
+    } catch {
+      /* DB zaten kapalı olabilir */
+    }
+    // app.quit() bazı hata bağlamlarında tetiklenmeyebilir; app.exit daha güvenilir.
+    app.exit(1)
+  })
+}
+
 if (!gotTheLock) {
   app.quit()
 } else {
@@ -67,9 +94,34 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
     setupLogger()
     log.info('Uygulama başlatılıyor...')
+    const userData = app.getPath('userData')
+
+    // Hata yönetimi + teşhis altyapısı (154-160).
+    initErrorLog(userData)
+    initPerformance()
+    setDebugSink((m) => log.debug(m))
+
+    // Kritik hata yakalama: çökme raporu + güvenli kapatma (156/160).
+    process.on('uncaughtException', (err) => {
+      logError('critical', 'uncaughtException', err.message, err.stack)
+      void writeCrashReport(userData, 'uncaughtException', err)
+      shutdownSafely('uncaughtException')
+    })
+    process.on('unhandledRejection', (reason) => {
+      const msg = reason instanceof Error ? reason.message : String(reason)
+      const stack = reason instanceof Error ? reason.stack : undefined
+      logError('error', 'unhandledRejection', msg, stack)
+      void writeCrashReport(userData, 'unhandledRejection', reason)
+    })
+
     // Şifreli ayar deposu (147) DB'den önce başlatılmalı (secure settings master key).
-    await initSecretStore(app.getPath('userData'))
-    initDb(join(app.getPath('userData'), 'telefon.db'))
+    await initSecretStore(userData)
+    initDb(join(userData, 'telefon.db'))
+
+    // Debug modu (157): kalıcı ayardan yükle.
+    const debugEnabled = getSetting('debug.enabled') === '1'
+    setDebug(debugEnabled)
+    setDebugMode(debugEnabled)
 
     registerIpcHandlers()
     createSplashWindow()
@@ -77,6 +129,7 @@ if (!gotTheLock) {
     startDevicePolling(() => mainWindow)
     startUsbWatcher(() => void refreshDevices())
     setupAutoUpdater(() => mainWindow)
+    startMemoryMonitor() // bellek izleme (159)
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
@@ -85,6 +138,8 @@ if (!gotTheLock) {
 
   app.on('will-quit', () => {
     stopDevicePolling()
+    stopMemoryMonitor()
+    void flushErrorLog()
     closeDb()
   })
 

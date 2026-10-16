@@ -34,4 +34,11 @@ export function setupLogger(): void {
   log.info('Logger hazır. Log dosyası:', join(app.getPath('userData'), 'logs', 'main.log'))
 }
 
+// Debug modu (157): detaylı loglama için seviyeyi debug'a çeker.
+export function setDebugMode(enabled: boolean): void {
+  log.transports.console.level = enabled ? 'debug' : 'info'
+  log.transports.file.level = enabled ? 'debug' : 'debug'
+  if (enabled) log.debug('Debug modu etkinleştirildi.')
+}
+
 export default log

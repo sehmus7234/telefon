@@ -399,6 +399,40 @@ npx esbuild scripts/security.selfcheck.ts --bundle --platform=node --format=cjs 
 node scripts/.security.selfcheck.cjs
 ```
 
+## Hata Yönetimi ve Teşhis (prompt 151-160)
+
+`src/main/services/errors/` altında hata yönetimi + gözlemlenebilirlik katmanı:
+
+- `adbError.ts` — ADB hatalarını kullanıcı dostu Türkçe mesaja çevirir (152):
+  `device not found` → "Cihaz bulunamadı...", `unauthorized` → izin rehberi vb.
+  `exec.ts` hata fırlattığında bu çeviriyi kullanır.
+- `retry.ts` — ağ hataları için üstel geri çekilmeli retry (153). `securityUpdates.ts`
+  bülten çekerken bu mekanizmayı kullanır.
+- `errorLog.ts` — hataları `userData/logs/errors.jsonl` dosyasına sıralı yazar + bellekte
+  son 200 kaydı tutar (154).
+- `crash.ts` — çökme raporlarını `userData/crashes/crash-*.json` olarak yazar ve analiz
+  eder (toplam/özet/tekrarlayan mesaj) (160).
+- `performance.ts` — başlangıç süresi, çalışma süresi, bellek, ADB komut sayısı/ort. süre (158).
+- `memory.ts` — heap eğilimini izler; sürekli artan kullanımda "olası bellek sızıntısı"
+  uyarısı üretir (159, sezgisel).
+- `debug.ts` — hata ayıklama modu bayrağı + `debug()` çıktısı (157).
+- `report.ts` — hata loglarını + çökme raporlarını + ana logu tek zip'te toplar (155).
+
+Main süreç (`index.ts`): `uncaughtException`/`unhandledRejection` yakalanır → çökme
+raporu + hata logu yazılır; kritik hatada `shutdownSafely()` logları boşaltıp DB'yi
+kapatıp güvenle çıkar (156). Debug modu `settings` tablosundan (`debug.enabled`) yüklenir.
+
+Arayüz tarafı:
+
+- `ErrorBoundary` (151) — uygulamanın tamamını sarar; render hatasında geri dönüş ekranı
+  (yeniden yükle + hata raporu gönder) gösterir ve hatayı main'e loglar.
+- `ErrorDiagnostics` (154-160) — Ayarlar sayfasında: debug modu anahtarı, performans
+  metrikleri, bellek izleme, çökme raporları, son hatalar, hata raporu gönder + güvenli
+  kapat butonları.
+
+Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlikte test eder
+(55 asılırlık).
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.

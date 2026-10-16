@@ -11,6 +11,7 @@ import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Toasts from './components/Toasts'
 import AppLock from './components/AppLock'
+import ErrorBoundary from './components/ErrorBoundary'
 import DashboardView from './views/DashboardView'
 import DevicesView from './views/DevicesView'
 import DeviceDetailView from './views/DeviceDetailView'
@@ -51,31 +52,33 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900 dark:bg-[#0f1117] dark:text-gray-100">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          {adbHata && (
-            <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
-              {adbHata}
-            </div>
-          )}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={page}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              {sayfalar[page] ?? <NotFoundView />}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+    <ErrorBoundary>
+      <div className="flex h-screen bg-gray-50 text-gray-900 dark:bg-[#0f1117] dark:text-gray-100">
+        <Sidebar />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">
+            {adbHata && (
+              <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
+                {adbHata}
+              </div>
+            )}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={page}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                {sayfalar[page] ?? <NotFoundView />}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
+        <Toasts />
+        {oturumKilitli && <AppLock />}
       </div>
-      <Toasts />
-      {oturumKilitli && <AppLock />}
-    </div>
+    </ErrorBoundary>
   )
 }

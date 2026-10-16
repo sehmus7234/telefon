@@ -10,7 +10,7 @@ import type {
   TestReport,
   SecurityUpdateStatus
 } from '@shared/types'
-import log from './logger'
+import log, { setDebugMode } from './logger'
 import * as adb from './services/adb'
 import { refreshDevices } from './poller'
 import { startScrcpy } from './scrcpy'
@@ -22,12 +22,25 @@ import {
   deleteBackup,
   setSecureSetting,
   getSecureSetting,
-  deleteSecureSetting
+  deleteSecureSetting,
+  setSetting,
+  getSetting
 } from './db'
 import { runTests, exportPdf } from './services/tests'
 import { listFiles, pullFile, pushFile, deleteFile, createFolder } from './services/files'
 import * as security from './services/security'
 import { classifyCommand } from './services/security'
+import {
+  getRecentErrors,
+  exportErrorReport,
+  analyzeCrashes,
+  getPerformanceMetrics,
+  getMemoryStatus,
+  setDebug,
+  isDebug,
+  flushErrorLog,
+  logError
+} from './services/errors'
 
 // IPC kanalları: main süreçte ipcMain.handle ile tanımlanır, preload'da
 // contextBridge ile renderer'a açılır.
@@ -273,4 +286,51 @@ export function registerIpcHandlers(): void {
     return lastSecurityStatus
   })
   ipcMain.handle('security:updates:status', (): SecurityUpdateStatus | null => lastSecurityStatus)
+
+  // --- Hata yönetimi + teşhis (prompt 151-160) ---
+
+  // Hata logları (154)
+  ipcMain.handle('errors:list', (_e, limit?: number) => getRecentErrors(limit ?? 50))
+  // Renderer'dan hata logu (154) — ErrorBoundary tarafından kullanılır.
+  ipcMain.handle(
+    'errors:log',
+    (_e, level: string, source: string, message: string, stack?: string) => {
+      logError(level, source, message, stack)
+    }
+  )
+
+  // Hata raporu dışa aktarma (155)
+  ipcMain.handle('errors:export-report', async () => {
+    const result = await exportErrorReport({
+      baseDir: app.getPath('userData'),
+      outputDir: app.getPath('downloads')
+    })
+    if (result.filePath) shell.showItemInFolder(result.filePath)
+    return result
+  })
+
+  // Çökme raporu analizi (160)
+  ipcMain.handle('errors:crash-summary', () => analyzeCrashes(app.getPath('userData')))
+
+  // Performans metrikleri (158)
+  ipcMain.handle('perf:metrics', () => getPerformanceMetrics())
+
+  // Bellek durumu (159)
+  ipcMain.handle('memory:status', () => getMemoryStatus())
+
+  // Debug modu (157)
+  ipcMain.handle('debug:get', () => isDebug())
+  ipcMain.handle('debug:set', (_e, enabled: boolean) => {
+    setDebug(enabled)
+    setDebugMode(enabled)
+    setSetting('debug.enabled', enabled ? '1' : '0')
+    return enabled
+  })
+
+  // Güvenli kapatma (156) — kullanıcı tetikli.
+  ipcMain.handle('app:quit-safely', async () => {
+    await flushErrorLog()
+    app.quit()
+    return true
+  })
 }

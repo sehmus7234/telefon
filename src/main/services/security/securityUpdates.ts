@@ -3,6 +3,7 @@
 // mevcut Electron sürümünü etkileyen güvenlik bültenlerini çeker.
 // Ağ bağımsız kısımlar (sürüm karşılaştırma + ayrıştırma) saf fonksiyondur.
 import type { SecurityUpdateStatus } from '@shared/types'
+import { withRetry } from '../errors/retry'
 
 const ADVISORIES_URL =
   'https://api.github.com/advisories?ecosystem=npm&affects=electron&per_page=100'
@@ -50,22 +51,26 @@ export function parseAdvisories(json: unknown, currentElectronVersion: string): 
   return affected
 }
 
-// Bültenleri getirir; test için fetchFn enjekte edilebilir.
+// Bültenleri getirir; test için fetchFn enjekte edilebilir. Ağ hatalarında retry (153).
 export async function fetchSecurityAdvisories(
   fetchFn: typeof fetch = fetch
 ): Promise<unknown> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 10_000)
-  try {
-    const res = await fetchFn(ADVISORIES_URL, {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'telefon-app' },
-      signal: controller.signal
-    })
-    if (!res.ok) throw new Error(`Advisory API HTTP ${res.status}`)
-    return await res.json()
-  } finally {
-    clearTimeout(timer)
+  const doFetch = async (): Promise<unknown> => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 10_000)
+    try {
+      const res = await fetchFn(ADVISORIES_URL, {
+        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'telefon-app' },
+        signal: controller.signal
+      })
+      if (!res.ok) throw new Error(`Advisory API HTTP ${res.status}`)
+      return await res.json()
+    } finally {
+      clearTimeout(timer)
+    }
   }
+  // Ağ hatalarında 3 deneme (üstel geri çekilme).
+  return withRetry(doFetch, { retries: 3, baseDelayMs: 500 })
 }
 
 export interface CheckSecurityUpdatesOptions {

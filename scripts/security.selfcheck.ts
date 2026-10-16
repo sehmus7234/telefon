@@ -33,6 +33,24 @@ import {
   lock,
   unlock
 } from '../src/main/services/security'
+import {
+  humanizeAdbError,
+  humanizeError,
+  withRetry,
+  isNetworkError,
+  initErrorLog,
+  logError,
+  getRecentErrors,
+  readAllErrors,
+  flushErrorLog,
+  initPerformance,
+  recordAdbCommand,
+  getPerformanceMetrics,
+  computeTrend,
+  writeCrashReport,
+  analyzeCrashes,
+  exportErrorReport
+} from '../src/main/services/errors'
 import { initDb, setSecureSetting, getSecureSetting, deleteSecureSetting, closeDb } from '../src/main/db'
 
 let passed = 0
@@ -159,6 +177,67 @@ async function main(): Promise<void> {
   const noneAffected = parseAdvisories(fakeJson, '34.5.0')
   check('güncel sürüm etkilenmez', noneAffected.length === 0)
 
+  console.log('== ADB hata çevirisi (152) ==')
+  check('device not found dost mesaja çevrilir', humanizeAdbError('error: device not found') === 'Cihaz bulunamadı veya bağlı değil.')
+  check('unauthorized dost mesaja çevrilir', humanizeAdbError('device unauthorized') === 'Cihaz yetkili değil — telefonda "USB hata ayıklamaya izin ver" onayını verin.')
+  check('bilinmeyen hata aynen kalır', humanizeAdbError('garip hata xyz') === 'garip hata xyz')
+  check('humanizeError Error nesnesini çevirir', humanizeError(new Error('device offline')) === 'Cihaz bulunamadı veya bağlı değil.')
+
+  console.log('== Retry (153) ==')
+  let deneme = 0
+  const sonuc = await withRetry(async () => {
+    deneme++
+    if (deneme < 3) throw new Error('ECONNRESET')
+    return 'ok'
+  }, { retries: 3, baseDelayMs: 5 })
+  check('ağ hatasında yeniden deneyip başarır', sonuc === 'ok' && deneme === 3)
+  check('isNetworkError ECONNRESET tanır', isNetworkError(new Error('ECONNRESET')))
+  check('isNetworkError HTTP 500 tanır', isNetworkError(new Error('HTTP 503')))
+  let hata = false
+  try {
+    await withRetry(async () => {
+      throw new Error('kalıcı hata')
+    }, { retries: 2, baseDelayMs: 5, shouldRetry: () => false })
+  } catch {
+    hata = true
+  }
+  check('retry edilemeyen hata hemen fırlar', hata)
+
+  console.log('== Bellek eğilimi (159) ==')
+  check('düz seri kararlı', computeTrend([10, 10, 10, 10, 10]) === 'stable')
+  check('artan seri büyüyor', computeTrend([10, 10, 11, 11, 12, 12]) === 'growing')
+  check('keskin artış kritik', computeTrend([10, 11, 12, 14, 17, 25]) === 'critical')
+
+  console.log('== Hata logu + rapor + çökme (154/155/160) ==')
+  const errDir = await fs.mkdtemp(join(tmpdir(), 'telefon-err-'))
+  initErrorLog(errDir)
+  logError('error', 'test', 'bir hata oldu', 'stack satırı')
+  await flushErrorLog()
+  const recent = getRecentErrors()
+  check('logError belleğe yazar', recent.length === 1 && recent[0].message === 'bir hata oldu')
+  const all = await readAllErrors()
+  check('logError dosyaya yazar', all.length === 1 && all[0].source === 'test')
+
+  await writeCrashReport(errDir, 'uncaughtException', new Error('çökme 1'), { a: 1 })
+  await writeCrashReport(errDir, 'uncaughtException', new Error('çökme 2'), { a: 2 })
+  const crashSum = await analyzeCrashes(errDir)
+  check('çökme analizi sayar', crashSum.count === 2 && crashSum.lastCrashAt !== null)
+  check('çökme gruplaması', crashSum.topMessages.length >= 1)
+
+  const rapor = await exportErrorReport({ baseDir: errDir, outputDir: errDir })
+  check('rapor zip üretir', rapor.filePath !== null && rapor.entryCount === 1)
+  check('rapor dosyası var', rapor.filePath ? (await fs.stat(rapor.filePath)).size > 0 : false)
+
+  console.log('== Performans (158) ==')
+  initPerformance()
+  recordAdbCommand(120)
+  recordAdbCommand(80)
+  const perf = getPerformanceMetrics()
+  check('ADB komut sayacı', perf.adbCommandCount === 2)
+  check('ortalama komut süresi', perf.avgAdbCommandMs === 100)
+  check('uptime pozitif', perf.uptimeMs > 0)
+
+  await fs.rm(errDir, { recursive: true, force: true }).catch(() => {})
   await fs.rm(tmp, { recursive: true, force: true }).catch(() => {})
   await fs.rm(fakeHome, { recursive: true, force: true }).catch(() => {})
   await fs.rm(dbDir, { recursive: true, force: true }).catch(() => {})
