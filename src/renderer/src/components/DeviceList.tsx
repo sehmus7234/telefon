@@ -1,5 +1,22 @@
 import { useDeviceStore } from '../store/useDeviceStore'
+import { formatBytes } from '../utils/format'
+import type { BatteryInfo } from '@shared/types'
 import DeviceStatusBadge from './DeviceStatusBadge'
+
+const pilSaglik: Record<string, string> = {
+  good: 'iyi',
+  overheat: 'aşırı ısındı',
+  cold: 'soğuk',
+  dead: 'arızalı',
+  'over voltage': 'yüksek voltaj',
+  'unspecified failure': 'arıza',
+  unknown: 'bilinmiyor'
+}
+
+function pilMetni(b: BatteryInfo): string {
+  const saglik = pilSaglik[b.health] ?? b.health
+  return `Pil %${b.level} · ${b.temperatureC}°C · ${saglik}`
+}
 
 export default function DeviceList() {
   const cihazlar = useDeviceStore((s) => s.cihazlar)
@@ -40,9 +57,45 @@ export default function DeviceList() {
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 {c.model}
                 {info?.osVersion ? ` · Android ${info.osVersion}` : ''}
+                {info?.apiLevel ? ` (API ${info.apiLevel})` : ''}
                 {c.connectionType ? ` · ${c.connectionType === 'wifi' ? 'Wi-Fi' : 'USB'}` : ''}
               </div>
               <div className="text-xs text-gray-400 dark:text-gray-500">{c.serialNumber}</div>
+
+              {info && (
+                <div className="mt-2 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                  {info.battery && <div>{pilMetni(info.battery)}</div>}
+                  {info.screen && (
+                    <div>
+                      {info.screen.width}x{info.screen.height} · {info.screen.densityDpi} dpi
+                    </div>
+                  )}
+                  {info.cpu && info.cpu.cores > 0 && (
+                    <div>
+                      CPU: {info.cpu.cores} çekirdek
+                      {info.cpu.hardware ? ` · ${info.cpu.hardware}` : ''}
+                    </div>
+                  )}
+                  {info.memory && (
+                    <div>
+                      RAM: {info.memory.availableGb} GB boş / {info.memory.totalGb} GB
+                    </div>
+                  )}
+                  {info.storage && (
+                    <div>
+                      Depolama: {formatBytes(info.storage.freeBytes)} boş /{' '}
+                      {formatBytes(info.storage.totalBytes)}
+                    </div>
+                  )}
+                  {info.serialNo && <div>Seri: {info.serialNo}</div>}
+                  {info.imei && <div>IMEI: {info.imei}</div>}
+                  {info.locale && <div>Dil: {info.locale}</div>}
+                  {info.isRooted && (
+                    <div className="font-medium text-amber-600 dark:text-amber-400">Root'lu cihaz</div>
+                  )}
+                </div>
+              )}
+
               {c.status === 'unauthorized' && (
                 <div className="mt-2 rounded bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                   Telefondan izin verin: cihazda "USB hata ayıklamaya izin verilsin mi?" onayını kabul edin.

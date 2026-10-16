@@ -22,12 +22,63 @@ export interface Device {
   lastConnectedAt?: string // ISO 8601
 }
 
+export interface BatteryInfo {
+  level: number // 0-100
+  status: string // charging | discharging | full | not charging | unknown
+  health: string // good | overheat | cold | dead | over voltage | unknown
+  temperatureC: number
+  voltageMv?: number
+  technology?: string
+}
+
+export interface ScreenInfo {
+  width: number
+  height: number
+  densityDpi: number
+}
+
+export interface CpuInfo {
+  cores: number
+  model: string
+  hardware: string
+}
+
+export interface MemoryInfo {
+  totalKb: number
+  availableKb: number
+  totalGb: number
+  availableGb: number
+}
+
+export interface StorageInfo {
+  totalBytes: number
+  usedBytes: number
+  freeBytes: number
+}
+
+export interface PackageInfo {
+  system: string[]
+  thirdParty: string[]
+}
+
 export interface DeviceInfo {
   device: Device
-  osVersion: string
+  model: string
   manufacturer: string
+  osVersion: string
+  apiLevel: number | null
+  serialNo: string | null
+  imei: string | null
+  battery: BatteryInfo | null
+  screen: ScreenInfo | null
+  cpu: CpuInfo | null
+  memory: MemoryInfo | null
+  storage: StorageInfo | null
+  isRooted: boolean
+  macAddress: string | null
+  locale: string | null
+  packages: PackageInfo | null
   firmwareVersion?: string
-  isRooted?: boolean
 }
 
 export type BackupStatus =

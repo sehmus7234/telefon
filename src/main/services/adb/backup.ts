@@ -1,33 +1,8 @@
 import { createHash } from 'crypto'
 import { promises as fs } from 'fs'
 import { join } from 'path'
-import type { BackupFile, DeviceInfo } from '@shared/types'
+import type { BackupFile } from '@shared/types'
 import { adbExec } from './exec'
-
-// Cihaz detaylarını getprop üzerinden okur.
-export async function getDeviceInfo(serial: string): Promise<DeviceInfo> {
-  const prop = async (key: string): Promise<string> =>
-    (await adbExec(['shell', 'getprop', key], { serial })).trim()
-
-  const [model, manufacturer, osVersion] = await Promise.all([
-    prop('ro.product.model'),
-    prop('ro.product.manufacturer'),
-    prop('ro.build.version.release')
-  ])
-
-  return {
-    device: {
-      id: serial,
-      name: model || serial,
-      model: model || 'Bilinmiyor',
-      platform: 'android',
-      serialNumber: serial,
-      status: 'online'
-    },
-    manufacturer: manufacturer || 'Bilinmiyor',
-    osVersion: osVersion || 'Bilinmiyor'
-  }
-}
 
 // Cihaz yolu -> güvenli dosya adı (/sdcard -> sdcard)
 function sanitizePath(p: string): string {

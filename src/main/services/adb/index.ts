@@ -24,6 +24,7 @@ export {
 } from './devices'
 export { getAdbVersion } from './version'
 export { getHistory, clearHistory } from './history'
-export { getDeviceInfo, createBackup } from './backup'
+export { createBackup } from './backup'
 export type { BackupOptions } from './backup'
+export { getDeviceInfo } from './deviceInfo'
 export { adbQueue, CommandQueue } from './queue'

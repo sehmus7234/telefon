@@ -248,6 +248,24 @@ Yedekler `userData/backups/<cihaz>-<zaman>/` altına yazılır.
 - **Kalıcılık (50):** Cihaz listesi `localStorage`'a yazılır; uygulama yeniden
   açılınca son cihazlar gösterilir (ilk tarama gerçek listeyi getirir).
 
+## Cihaz Bilgisi (prompt 51-70)
+
+`src/main/services/adb/deviceInfo.ts` içindeki `getDeviceInfo(serial)` tüm cihaz
+bilgilerini tek bir JSON objesinde toplar (prompt 70):
+
+- model (51), üretici (52), Android sürümü (53), API seviyesi (54), seri no (55)
+- IMEI (56) — `dumpsys iphonesubinfo`, yalnızca okuma; Android 10+ genelde boş döner
+- pil: seviye (57), sağlık + sıcaklık (58) — arayüzde gösterilir
+- ekran çözünürlüğü (59) + DPI (60)
+- CPU (61), RAM (62), depolama (63) — `/proc/cpuinfo`, `/proc/meminfo`, `df /data`
+- root kontrolü (64) — `su -c id`; `uid=0(root)` ise root'lu
+- paketler: sistem (66) + üçüncü parti (67) — `pm list packages -s/-3`
+- MAC adresi (68), dil/bölge (69) — `persist.sys.locale`
+
+Her komut ayrı ayrı parse edilir; biri başarısız olursa ilgili alan `null`/boş
+kalır, diğer alanları etkilemez. Bilgiler `device:info` olayıyla renderer'a gelir
+ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root).
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.
