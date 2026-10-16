@@ -33,6 +33,7 @@ import { classifyCommand } from './services/security'
 import {
   getRecentErrors,
   exportErrorReport,
+  uploadErrorReport,
   analyzeCrashes,
   getPerformanceMetrics,
   getMemoryStatus,
@@ -307,6 +308,32 @@ export function registerIpcHandlers(): void {
     })
     if (result.filePath) shell.showItemInFolder(result.filePath)
     return result
+  })
+
+  // Hata raporu gönderme (155): endpoint'e yükle veya GitHub issue aç.
+  ipcMain.handle('errors:send-report', async () => {
+    const endpoint = getSetting('errorReport.endpoint') ?? undefined
+    const githubRepo = getSetting('errorReport.githubRepo') ?? undefined
+    const token = getSecureSetting('errorReport.token') ?? undefined
+    const result = await uploadErrorReport({
+      baseDir: app.getPath('userData'),
+      outputDir: app.getPath('downloads'),
+      endpoint,
+      githubRepo,
+      token
+    })
+    if (result.url) void shell.openExternal(result.url)
+    if (result.filePath && result.method !== 'github') {
+      shell.showItemInFolder(result.filePath)
+    }
+    return result
+  })
+
+  // Genel ayar okuma/yazma (düz metin; hata raporu yapılandırması için).
+  ipcMain.handle('settings:get', (_e, key: string) => getSetting(key))
+  ipcMain.handle('settings:set', (_e, key: string, value: string) => {
+    setSetting(key, value)
+    return true
   })
 
   // Çökme raporu analizi (160)

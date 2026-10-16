@@ -1,19 +1,33 @@
-// Hata raporu dışa aktarma (prompt 155).
-// Hata logları + çökme raporları + ana logu tek bir zip'te toplar.
+// Hata raporu dışa aktarma + gönderme (prompt 155).
+// Hata logları + çökme raporları + ana logu tek bir zip'te toplar; istenirse
+// yapılandırılmış bir endpoint'e yükler veya GitHub issue bağlantısı üretir.
 import { promises as fs } from 'fs'
-import { join } from 'path'
+import { join, basename } from 'path'
 import AdmZip from 'adm-zip'
-import type { ErrorReportResult } from '@shared/types'
+import type { ErrorReportResult, ErrorReportDelivery } from '@shared/types'
 import { readAllErrors } from './errorLog'
 import { analyzeCrashes } from './crash'
+import { withRetry } from './retry'
 
 export interface ExportErrorReportOptions {
   baseDir: string // userData
   outputDir: string // örn. Downloads
 }
 
+export interface UploadErrorReportOptions extends ExportErrorReportOptions {
+  endpoint?: string // POST edilecek webhook URL
+  githubRepo?: string // "owner/repo" — GitHub issue ön doldurması için
+  token?: string // endpoint için Bearer token (opsiyonel)
+}
+
 // Rapor zip'ini üretir; yol + özet döndürür.
 export async function exportErrorReport(
+  opts: ExportErrorReportOptions
+): Promise<ErrorReportResult> {
+  return buildErrorReport(opts)
+}
+
+async function buildErrorReport(
   opts: ExportErrorReportOptions
 ): Promise<ErrorReportResult> {
   const { baseDir, outputDir } = opts
@@ -67,4 +81,64 @@ export async function exportErrorReport(
     crashCount: crashes.count,
     summary
   }
+}
+
+// Raporu gönderir: endpoint varsa POST, yoksa GitHub issue bağlantısı üretir;
+// her iki durumda da zip yerelde bırakılır (kullanıcı ekleyebilir).
+export async function uploadErrorReport(
+  opts: UploadErrorReportOptions
+): Promise<ErrorReportDelivery> {
+  const report = await buildErrorReport(opts)
+  const base = {
+    filePath: report.filePath,
+    entryCount: report.entryCount,
+    crashCount: report.crashCount,
+    summary: report.summary
+  }
+
+  // 1) Yapılandırılmış endpoint'e yükle.
+  if (opts.endpoint) {
+    try {
+      const buf = await fs.readFile(report.filePath as string)
+      const form = new FormData()
+      form.append(
+        'report',
+        new Blob([new Uint8Array(buf)], { type: 'application/zip' }),
+        basename(report.filePath as string)
+      )
+      form.append('summary', report.summary)
+
+      const res = await withRetry(
+        () =>
+          fetch(opts.endpoint as string, {
+            method: 'POST',
+            headers: opts.token ? { Authorization: `Bearer ${opts.token}` } : {},
+            body: form
+          }),
+        { retries: 3 }
+      )
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return { ...base, method: 'endpoint', delivered: true }
+    } catch (e) {
+      return {
+        ...base,
+        method: 'endpoint',
+        delivered: false,
+        error: e instanceof Error ? e.message : String(e)
+      }
+    }
+  }
+
+  // 2) GitHub issue bağlantısı üret (ön doldurulmuş gövde).
+  if (opts.githubRepo) {
+    const [owner, repo] = opts.githubRepo.split('/')
+    const url =
+      `https://github.com/${owner}/${repo}/issues/new` +
+      `?title=${encodeURIComponent('Hata raporu (Telefon)')}` +
+      `&body=${encodeURIComponent(report.summary)}`
+    return { ...base, method: 'github', delivered: false, url }
+  }
+
+  // 3) Sadece dosya.
+  return { ...base, method: 'file', delivered: true }
 }

@@ -417,6 +417,9 @@ node scripts/.security.selfcheck.cjs
   uyarısı üretir (159, sezgisel).
 - `debug.ts` — hata ayıklama modu bayrağı + `debug()` çıktısı (157).
 - `report.ts` — hata loglarını + çökme raporlarını + ana logu tek zip'te toplar (155).
+  `uploadErrorReport` yapılandırılmış bir endpoint'e POST eder (multipart, retry ile) veya
+  GitHub issue bağlantısı üretir; endpoint/repo/token Ayarlar → Hata raporu bölümünden
+  belirlenir (token şifreli saklanır).
 
 Main süreç (`index.ts`): `uncaughtException`/`unhandledRejection` yakalanır → çökme
 raporu + hata logu yazılır; kritik hatada `shutdownSafely()` logları boşaltıp DB'yi
@@ -430,8 +433,19 @@ Arayüz tarafı:
   metrikleri, bellek izleme, çökme raporları, son hatalar, hata raporu gönder + güvenli
   kapat butonları.
 
+Gerçek bellek sızıntısı analizi (159) — `--inspect` + CDP heap snapshot farkı:
+
+```bash
+npm run dev:inspect     # ana süreci --inspect=9229 ile başlatır
+npm run heap:check      # iki heap anlık görüntüsü alıp büyüyen sınıfları listeler
+# seçenekler: --port 9229 --delay 4000 --top 15
+```
+
+`scripts/heap-leak-check.mjs` inspector'a bağlanır, iki `takeHeapSnapshot` alır (arada GC)
+ve nesne sayısı/self-size artan sınıfları olası sızıntı adayı olarak raporlar.
+
 Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlikte test eder
-(55 asılırlık).
+(58 asılırlık); endpoint yükleme yerel bir HTTP sunucusuyla doğrulanır.
 
 ## İkon ve Paketleme
 

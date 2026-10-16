@@ -33,5 +33,6 @@ export type {
   MemoryTrend,
   ErrorLogEntry,
   CrashSummary,
-  ErrorReportResult
+  ErrorReportResult,
+  ErrorReportDelivery
 } from '@shared/types'

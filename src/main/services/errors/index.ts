@@ -28,4 +28,5 @@ export {
 } from './crash'
 export type { CrashReportFile } from './crash'
 export { setDebug, isDebug, debug, setDebugSink } from './debug'
-export { exportErrorReport } from './report'
+export { exportErrorReport, uploadErrorReport } from './report'
+export type { UploadErrorReportOptions } from './report'

@@ -294,3 +294,14 @@ export interface ErrorReportResult {
   crashCount: number
   summary: string
 }
+
+export interface ErrorReportDelivery {
+  method: 'endpoint' | 'github' | 'file'
+  delivered: boolean
+  filePath: string | null
+  url?: string
+  entryCount: number
+  crashCount: number
+  summary: string
+  error?: string
+}

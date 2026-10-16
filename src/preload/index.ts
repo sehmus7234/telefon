@@ -22,7 +22,8 @@ import type {
   CrashSummary,
   PerformanceMetrics,
   MemoryStatus,
-  ErrorReportResult
+  ErrorReportResult,
+  ErrorReportDelivery
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -147,6 +148,11 @@ const api = {
     ipcRenderer.invoke('errors:log', level, source, message, stack),
   exportErrorReport: (): Promise<ErrorReportResult> =>
     ipcRenderer.invoke('errors:export-report'),
+  sendErrorReport: (): Promise<ErrorReportDelivery> =>
+    ipcRenderer.invoke('errors:send-report'),
+  getSetting: (key: string): Promise<string | null> => ipcRenderer.invoke('settings:get', key),
+  setSetting: (key: string, value: string): Promise<boolean> =>
+    ipcRenderer.invoke('settings:set', key, value),
   getCrashSummary: (): Promise<CrashSummary> => ipcRenderer.invoke('errors:crash-summary'),
   getPerformanceMetrics: (): Promise<PerformanceMetrics> => ipcRenderer.invoke('perf:metrics'),
   getMemoryStatus: (): Promise<MemoryStatus> => ipcRenderer.invoke('memory:status'),

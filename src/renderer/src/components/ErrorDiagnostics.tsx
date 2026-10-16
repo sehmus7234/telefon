@@ -4,7 +4,7 @@ import type {
   MemoryStatus,
   CrashSummary,
   ErrorLogEntry,
-  ErrorReportResult
+  ErrorReportDelivery
 } from '@shared/types'
 
 // Hata yönetimi + teşhis paneli (154-160). Ayarlar sayfasında gösterilir.
@@ -14,7 +14,10 @@ export default function ErrorDiagnostics() {
   const [bellek, setBellek] = useState<MemoryStatus | null>(null)
   const [crash, setCrash] = useState<CrashSummary | null>(null)
   const [hatalar, setHatalar] = useState<ErrorLogEntry[]>([])
-  const [rapor, setRapor] = useState<ErrorReportResult | null>(null)
+  const [gonderim, setGonderim] = useState<ErrorReportDelivery | null>(null)
+  const [endpoint, setEndpoint] = useState('')
+  const [githubRepo, setGithubRepo] = useState('')
+  const [token, setToken] = useState('')
 
   const yukle = async () => {
     setDebugModu(await window.api.getDebugMode())
@@ -22,6 +25,22 @@ export default function ErrorDiagnostics() {
     setBellek(await window.api.getMemoryStatus())
     setCrash(await window.api.getCrashSummary())
     setHatalar(await window.api.getRecentErrors(50))
+    setEndpoint((await window.api.getSetting('errorReport.endpoint')) ?? '')
+    setGithubRepo((await window.api.getSetting('errorReport.githubRepo')) ?? '')
+    setToken((await window.api.getSecureSetting('errorReport.token')) ?? '')
+  }
+
+  const endpointKaydet = async (v: string) => {
+    setEndpoint(v)
+    await window.api.setSetting('errorReport.endpoint', v)
+  }
+  const repoKaydet = async (v: string) => {
+    setGithubRepo(v)
+    await window.api.setSetting('errorReport.githubRepo', v)
+  }
+  const tokenKaydet = async (v: string) => {
+    setToken(v)
+    await window.api.setSecureSetting('errorReport.token', v)
   }
 
   useEffect(() => {
@@ -38,7 +57,7 @@ export default function ErrorDiagnostics() {
   }
 
   const raporGonder = async () => {
-    setRapor(await window.api.exportErrorReport())
+    setGonderim(await window.api.sendErrorReport())
   }
 
   const guvenliKapat = async () => {
@@ -199,6 +218,42 @@ export default function ErrorDiagnostics() {
 
       <div className="card space-y-3 p-5">
         <h2 className="font-semibold">Hata raporu</h2>
+        <div className="space-y-2">
+          <div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Hedef endpoint (POST webhook, opsiyonel)
+            </div>
+            <input
+              value={endpoint}
+              onChange={(e) => void endpointKaydet(e.target.value)}
+              placeholder="https://ornek.com/hata-raporu"
+              className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500 dark:border-gray-600 dark:bg-gray-800"
+            />
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              GitHub deposu (owner/repo — endpoint yoksa issue bağlantısı açılır)
+            </div>
+            <input
+              value={githubRepo}
+              onChange={(e) => void repoKaydet(e.target.value)}
+              placeholder="kullanici/telefon"
+              className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500 dark:border-gray-600 dark:bg-gray-800"
+            />
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Endpoint token (şifreli saklanır, opsiyonel)
+            </div>
+            <input
+              type="password"
+              value={token}
+              onChange={(e) => void tokenKaydet(e.target.value)}
+              placeholder="Bearer token"
+              className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500 dark:border-gray-600 dark:bg-gray-800"
+            />
+          </div>
+        </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => void raporGonder()} className="btn-primary">
             Hata raporu gönder
@@ -207,10 +262,21 @@ export default function ErrorDiagnostics() {
             Güvenli kapat
           </button>
         </div>
-        {rapor && (
+        {gonderim && (
           <div className="rounded bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-800/50 dark:text-gray-300">
-            <div>Kayıt: {rapor.entryCount} · Çökme: {rapor.crashCount}</div>
-            {rapor.filePath && <div className="truncate">Dosya: {rapor.filePath}</div>}
+            <div>
+              Yöntem: {gonderim.method} · Kayıt: {gonderim.entryCount} · Çökme:{' '}
+              {gonderim.crashCount}
+            </div>
+            {gonderim.method === 'endpoint' && (
+              <div className={gonderim.delivered ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                {gonderim.delivered ? '✓ Endpoint\'e yüklendi' : `✗ ${gonderim.error}`}
+              </div>
+            )}
+            {gonderim.method === 'github' && (
+              <div>GitHub issue bağlantısı tarayıcıda açıldı; raporu ekleyerek gönderin.</div>
+            )}
+            {gonderim.filePath && <div className="truncate">Dosya: {gonderim.filePath}</div>}
           </div>
         )}
       </div>

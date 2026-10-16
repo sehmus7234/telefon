@@ -49,8 +49,10 @@ import {
   computeTrend,
   writeCrashReport,
   analyzeCrashes,
-  exportErrorReport
+  exportErrorReport,
+  uploadErrorReport
 } from '../src/main/services/errors'
+import { createServer } from 'http'
 import { initDb, setSecureSetting, getSecureSetting, deleteSecureSetting, closeDb } from '../src/main/db'
 
 let passed = 0
@@ -227,6 +229,32 @@ async function main(): Promise<void> {
   const rapor = await exportErrorReport({ baseDir: errDir, outputDir: errDir })
   check('rapor zip üretir', rapor.filePath !== null && rapor.entryCount === 1)
   check('rapor dosyası var', rapor.filePath ? (await fs.stat(rapor.filePath)).size > 0 : false)
+
+  // 155 — endpoint'e yükleme (yerel test sunucusu ile).
+  let receivedBytes = 0
+  let receivedCount = 0
+  const server = createServer((req, res) => {
+    req.on('data', (c: Buffer) => (receivedBytes += c.length))
+    req.on('end', () => {
+      receivedCount++
+      res.writeHead(200)
+      res.end('ok')
+    })
+  })
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+  const addr = server.address() as { port: number }
+  const upload = await uploadErrorReport({
+    baseDir: errDir,
+    outputDir: errDir,
+    endpoint: `http://127.0.0.1:${addr.port}/report`
+  })
+  check('endpoint yüklemesi başarılı', upload.method === 'endpoint' && upload.delivered)
+  check('sunucu multipart gövde aldı', receivedCount === 1 && receivedBytes > 100)
+  await new Promise<void>((r) => server.close(() => r()))
+
+  // GitHub issue bağlantısı üretimi.
+  const gh = await uploadErrorReport({ baseDir: errDir, outputDir: errDir, githubRepo: 'patron/telefon' })
+  check('github issue URL üretir', gh.method === 'github' && (gh.url ?? '').includes('issues/new'))
 
   console.log('== Performans (158) ==')
   initPerformance()
