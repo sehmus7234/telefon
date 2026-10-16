@@ -1,0 +1,33 @@
+# Paketleme + otomatik güncelleme yapılandırması (prompt 9)
+# electron-updater, paketlenen uygulamanın içine gömülen app-update.yml'i okur;
+# `publish` bloğu bu dosyayı üretir.
+appId: com.patron.telefon
+productName: Telefon
+directories:
+  buildResources: build
+  output: release
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{README.md,CHANGELOG.md,dev-app-update.yml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+npmRebuild: false
+win:
+  executableName: telefon
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  createDesktopShortcut: always
+linux:
+  target:
+    - AppImage
+    - deb
+  maintainer: patron
+  category: Utility
+appImage:
+  artifactName: ${name}-${version}.${ext}
+publish:
+  provider: github
+  owner: PATRON # TODO: GitHub kullanıcı adınla değiştir
+  repo: telefon # TODO: GitHub repo adınla değiştir
