@@ -3,6 +3,7 @@ import { listDevices, getDeviceInfo } from './services/adb'
 import { diffDevices } from './services/adb/devices'
 import type { Device } from '@shared/types'
 import log from './logger'
+import { upsertDevice } from './db'
 
 let timer: NodeJS.Timeout | null = null
 let previous: Device[] = []
@@ -30,10 +31,19 @@ async function scanOnce(): Promise<Device[]> {
   for (const d of removed) win?.webContents.send('device:removed', d)
   for (const d of added) {
     win?.webContents.send('device:connected', d)
-    // Yeni cihaz bağlanınca bilgilerini otomatik çek (prompt 49).
+    // Yeni cihaz bağlanınca bilgilerini otomatik çek (prompt 49) + DB'ye kaydet.
     const serial = d.serialNumber ?? d.id
     void getDeviceInfo(serial)
-      .then((info) => win?.webContents.send('device:info', { serial, info }))
+      .then((info) => {
+        win?.webContents.send('device:info', { serial, info })
+        upsertDevice(serial, {
+          name: info.model,
+          model: info.model,
+          manufacturer: info.manufacturer,
+          osVersion: info.osVersion,
+          apiLevel: info.apiLevel ?? undefined
+        })
+      })
       .catch(() => {
         /* bilgi çekilemedi; sessiz geç */
       })

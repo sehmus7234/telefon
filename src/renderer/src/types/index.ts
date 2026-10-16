@@ -12,5 +12,11 @@ export type {
   AppSettings,
   AdbStatusInfo,
   AdbHistoryEntry,
-  AdbRunResult
+  AdbRunResult,
+  BackupType,
+  BackupReport,
+  BackupEstimate,
+  BackupHistoryItem,
+  BackupProgress,
+  BackupStageResult
 } from '@shared/types'

@@ -6,6 +6,7 @@ import { createSplashWindow, closeSplashWindow } from './splash'
 import { setupAutoUpdater } from './updater'
 import { startDevicePolling, stopDevicePolling, refreshDevices } from './poller'
 import { startUsbWatcher } from './usbWatcher'
+import { initDb, closeDb } from './db'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -65,6 +66,7 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     setupLogger()
     log.info('Uygulama başlatılıyor...')
+    initDb(join(app.getPath('userData'), 'telefon.db'))
 
     registerIpcHandlers()
     createSplashWindow()
@@ -78,7 +80,10 @@ if (!gotTheLock) {
     })
   })
 
-  app.on('will-quit', () => stopDevicePolling())
+  app.on('will-quit', () => {
+    stopDevicePolling()
+    closeDb()
+  })
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()

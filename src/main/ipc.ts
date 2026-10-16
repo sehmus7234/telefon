@@ -1,9 +1,11 @@
 import { ipcMain, dialog, app } from 'electron'
-import type { Device, DeviceInfo, BackupFile, AdbRunResult } from '@shared/types'
+import type { Device, DeviceInfo, BackupFile, AdbRunResult, BackupType } from '@shared/types'
 import log from './logger'
 import * as adb from './services/adb'
 import { refreshDevices } from './poller'
 import { startScrcpy } from './scrcpy'
+import { runBackup, restoreBackup, estimateBackup } from './services/backup'
+import { addBackup, listBackups, getBackup, deleteBackup } from './db'
 
 // IPC kanalları: main süreçte ipcMain.handle ile tanımlanır, preload'da
 // contextBridge ile renderer'a açılır.
@@ -51,10 +53,50 @@ export function registerIpcHandlers(): void {
     adb.disconnectWireless(ip, port)
   )
 
-  // Yedekleme
-  ipcMain.handle('backup:create', (_e, deviceId: string): Promise<BackupFile> =>
-    adb.createBackup(deviceId, app.getPath('userData'))
+  // Yedekleme (prompt 96-110)
+  const activeBackups = new Map<string, AbortController>()
+
+  ipcMain.handle(
+    'backup:run',
+    (event, opts: { serial: string; types?: BackupType[]; exclude?: string[]; zip?: boolean }) => {
+      const runId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      const controller = new AbortController()
+      activeBackups.set(runId, controller)
+      runBackup({
+        ...opts,
+        baseDir: app.getPath('userData'),
+        signal: controller.signal,
+        onProgress: (p) => event.sender.send('backup:progress', { runId, ...p })
+      })
+        .then((report) => {
+          const dbId = addBackup(report)
+          event.sender.send('backup:result', { runId, report, dbId })
+        })
+        .catch((e) => {
+          event.sender.send('backup:result', {
+            runId,
+            error: e instanceof Error ? e.message : String(e)
+          })
+        })
+        .finally(() => activeBackups.delete(runId))
+      return runId
+    }
   )
+  ipcMain.handle('backup:cancel', (_e, runId: string) => {
+    const c = activeBackups.get(runId)
+    if (c) c.abort()
+    return !!c
+  })
+  ipcMain.handle('backup:estimate', (_e, serial: string, paths: string[]) =>
+    estimateBackup(serial, paths)
+  )
+  ipcMain.handle('backup:list', () => listBackups())
+  ipcMain.handle('backup:delete', (_e, id: number) => deleteBackup(id))
+  ipcMain.handle('backup:restore', async (_e, id: number) => {
+    const b = getBackup(id)
+    if (!b) throw new Error('Yedek bulunamadı')
+    return restoreBackup(b.deviceSerial, b.path)
+  })
 
   // Komut geçmişi (prompt 27)
   ipcMain.handle('adb:history', () => adb.getHistory())

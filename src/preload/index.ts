@@ -6,7 +6,12 @@ import type {
   BackupFile,
   AdbStatusInfo,
   AdbHistoryEntry,
-  AdbRunResult
+  AdbRunResult,
+  BackupType,
+  BackupEstimate,
+  BackupHistoryItem,
+  BackupProgress,
+  BackupReport
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -26,8 +31,6 @@ const api = {
   listUnauthorized: (): Promise<string[]> => ipcRenderer.invoke('devices:unauthorized'),
   startScrcpy: (serial: string): Promise<{ ok: boolean; message: string }> =>
     ipcRenderer.invoke('device:scrcpy', serial),
-  createBackup: (deviceId: string): Promise<BackupFile> =>
-    ipcRenderer.invoke('backup:create', deviceId),
   selectDirectory: (): Promise<string | null> =>
     ipcRenderer.invoke('dialog:select-directory'),
 
@@ -51,6 +54,20 @@ const api = {
   ): Promise<string> => ipcRenderer.invoke('adb:run', args, opts),
   cancelCommand: (runId: string): Promise<boolean> => ipcRenderer.invoke('adb:cancel', runId),
 
+  // Yedekleme (96-110)
+  runBackup: (opts: {
+    serial: string
+    types?: BackupType[]
+    exclude?: string[]
+    zip?: boolean
+  }): Promise<string> => ipcRenderer.invoke('backup:run', opts),
+  cancelBackup: (runId: string): Promise<boolean> => ipcRenderer.invoke('backup:cancel', runId),
+  estimateBackup: (serial: string, paths: string[]): Promise<BackupEstimate> =>
+    ipcRenderer.invoke('backup:estimate', serial, paths),
+  listBackups: (): Promise<BackupHistoryItem[]> => ipcRenderer.invoke('backup:list'),
+  deleteBackup: (id: number): Promise<boolean> => ipcRenderer.invoke('backup:delete', id),
+  restoreBackup: (id: number): Promise<string> => ipcRenderer.invoke('backup:restore', id),
+
   // Olaylar (prompt 48)
   onDevicesChanged: (cb: (devices: Device[]) => void): (() => void) =>
     subscribe('devices:changed', cb),
@@ -64,6 +81,11 @@ const api = {
     subscribe('devices:error', cb),
   onAdbResult: (cb: (result: AdbRunResult) => void): (() => void) =>
     subscribe('adb:result', cb),
+  onBackupProgress: (cb: (p: BackupProgress & { runId: string }) => void): (() => void) =>
+    subscribe('backup:progress', cb),
+  onBackupResult: (
+    cb: (r: { runId: string; report?: BackupReport; dbId?: number; error?: string }) => void
+  ): (() => void) => subscribe('backup:result', cb),
   onUpdaterEvent: (channel: string, cb: (payload: unknown) => void): (() => void) => {
     const allowed = ['updater:available', 'updater:progress', 'updater:downloaded']
     if (!allowed.includes(channel)) return () => {}

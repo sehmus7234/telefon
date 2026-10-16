@@ -99,6 +99,52 @@ export interface BackupFile {
   checksum?: string
 }
 
+export type BackupType = 'photos' | 'contacts' | 'sms' | 'apps'
+
+export interface BackupStageResult {
+  type: BackupType
+  fileCount: number
+  sizeBytes: number
+  error?: string
+}
+
+export interface BackupReport {
+  id: string
+  deviceSerial: string
+  types: BackupType[]
+  dir: string
+  zipPath?: string
+  fileCount: number
+  sizeBytes: number
+  durationMs: number
+  status: 'completed' | 'cancelled' | 'failed'
+  createdAt: string
+  stages: BackupStageResult[]
+  error?: string
+}
+
+export interface BackupEstimate {
+  totalBytes: number
+  estimatedSeconds: number
+}
+
+export interface BackupProgress {
+  stage: string
+  percent: number
+}
+
+export interface BackupHistoryItem {
+  id: number
+  deviceSerial: string
+  type: string
+  path: string
+  fileCount: number
+  sizeBytes: number
+  durationMs: number
+  status: string
+  createdAt: string
+}
+
 export type ThemeMode = 'light' | 'dark' | 'system'
 
 export interface AppSettings {

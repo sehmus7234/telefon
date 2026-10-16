@@ -293,6 +293,33 @@ ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root
 - **Tipografi/spacing (95):** Tailwind config'de Inter + brand renk + keyframe animasyonları;
   `card`, `btn-primary`, `btn-ghost` bileşen sınıfları.
 
+## Yedekleme + SQLite (prompt 96-113)
+
+**Yedekleme motoru** (`src/main/services/backup/`):
+
+- `stages.ts` — fotoğraf (96: `adb pull /sdcard/DCIM`), kişiler (97: content query
+  contacts), SMS (98: content query sms), uygulama (99: `adb backup`, Android 12+ kaldırıldı).
+- `manager.ts` — `runBackup` orkestratörü: tarih damgalı klasör (101), aşama ilerlemesi
+  (100), AbortSignal ile iptal (106), exclude (107), zip (104), rapor (108), `restoreBackup` (103).
+- `util.ts` — `measureDir`, `zipFolder` (adm-zip), `estimateBackup` (105: `du -sk` + hız varsayımı).
+
+**Arayüz** (`views/BackupView.tsx`): yedek türü seçimi, exclude, zip, tahmin, ilerleme
+çubuğu, iptal, rapor, geçmiş listesi (102), sil (109) ve geri yükle (103) butonları.
+
+**Bulut (110):** Google Drive/Dropbox gerçek OAuth gerektirir; bu iskelette yedek
+dosyalarına dosya sistemi üzerinden erişilebilir. Drive/Dropbox için ileride bir
+`CloudProvider` arayüzü (`upload(filePath)`) + OAuth token akışı eklenmeli.
+
+**SQLite (111-113)** (`src/main/db/`):
+
+- `better-sqlite3` (senkron, native); `telefon.db` `userData` altına yazılır.
+- Şema (112): `devices`, `backups`, `settings`, `logs` + `schema_migrations`.
+- Migration altyapısı (113): `migrations.ts` içinde versiyonlanmış migration'lar;
+  `migrate()` bekleyenleri transaction içinde uygular ve `schema_migrations`'a kaydeder.
+- Repo: `addBackup`, `listBackups`, `getBackup`, `deleteBackup`, `upsertDevice`,
+  `setSetting/getSetting`, `addLog`. Cihaz bilgisi bağlanınca `devices` tablosuna
+  otomatik yazılır (poller.ts).
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.
