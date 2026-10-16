@@ -24,6 +24,8 @@ const api = {
   getDeviceInfo: (serial: string): Promise<DeviceInfo> =>
     ipcRenderer.invoke('devices:info', serial),
   listUnauthorized: (): Promise<string[]> => ipcRenderer.invoke('devices:unauthorized'),
+  startScrcpy: (serial: string): Promise<{ ok: boolean; message: string }> =>
+    ipcRenderer.invoke('device:scrcpy', serial),
   createBackup: (deviceId: string): Promise<BackupFile> =>
     ipcRenderer.invoke('backup:create', deviceId),
   selectDirectory: (): Promise<string | null> =>

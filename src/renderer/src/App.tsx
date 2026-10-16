@@ -1,30 +1,32 @@
 import { useEffect } from 'react'
+import type { ReactNode } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useTheme } from './hooks/useTheme'
-import { useThemeStore } from './store/useThemeStore'
-import { useDeviceStore } from './store/useDeviceStore'
-import { useAdbStore } from './store/useAdbStore'
 import { useAdbBridge } from './hooks/useAdbBridge'
-import AdbStatusBar from './components/AdbStatusBar'
-import DeviceSelect from './components/DeviceSelect'
-import DeviceList from './components/DeviceList'
-import WirelessConnect from './components/WirelessConnect'
-import CommandConsole from './components/CommandConsole'
+import { useNavStore, type PageId } from './store/useNavStore'
+import { useAdbStore } from './store/useAdbStore'
+import { useDeviceStore } from './store/useDeviceStore'
+import Sidebar from './components/layout/Sidebar'
+import Header from './components/layout/Header'
 import Toasts from './components/Toasts'
+import DashboardView from './views/DashboardView'
+import DevicesView from './views/DevicesView'
+import DeviceDetailView from './views/DeviceDetailView'
+import BackupView from './views/BackupView'
+import TestsView from './views/TestsView'
+import FilesView from './views/FilesView'
+import SettingsView from './views/SettingsView'
+import NotFoundView from './views/NotFoundView'
 
 export default function App() {
   useTheme()
   useAdbBridge()
-
-  const mod = useThemeStore((s) => s.mod)
-  const tema = useThemeStore((s) => s.tema)
-  const setMod = useThemeStore((s) => s.setMod)
+  const page = useNavStore((s) => s.page)
 
   const durumYukle = useAdbStore((s) => s.durumYukle)
   const surumYukle = useAdbStore((s) => s.surumYukle)
   const gecmisYukle = useAdbStore((s) => s.gecmisYukle)
   const adbHata = useAdbStore((s) => s.hata)
-  const cihazRefresh = useDeviceStore((s) => s.refresh)
-  const taraniyor = useDeviceStore((s) => s.taraniyor)
 
   useEffect(() => {
     void durumYukle()
@@ -33,42 +35,40 @@ export default function App() {
     void useDeviceStore.getState().listele()
   }, [durumYukle, surumYukle, gecmisYukle])
 
-  const temaDegistir = () => {
-    setMod(tema === 'dark' ? 'light' : 'dark')
+  const sayfalar: Record<PageId, ReactNode> = {
+    dashboard: <DashboardView />,
+    devices: <DevicesView />,
+    'device-detail': <DeviceDetailView />,
+    backup: <BackupView />,
+    tests: <TestsView />,
+    files: <FilesView />,
+    settings: <SettingsView />
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 transition-colors dark:bg-gray-900 dark:text-gray-100">
-      <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <h1 className="text-xl font-semibold">Telefon Yöneticisi</h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => void cihazRefresh()}
-            disabled={taraniyor}
-            className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800"
-          >
-            Yenile
-          </button>
-          <button
-            onClick={temaDegistir}
-            className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800"
-          >
-            Tema: {mod} ({tema})
-          </button>
-        </div>
-      </header>
-      <main className="space-y-4 p-6">
-        {adbHata && (
-          <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
-            {adbHata}
-          </div>
-        )}
-        <AdbStatusBar />
-        <DeviceSelect />
-        <DeviceList />
-        <WirelessConnect />
-        <CommandConsole />
-      </main>
+    <div className="flex h-screen bg-gray-50 text-gray-900 dark:bg-[#0f1117] dark:text-gray-100">
+      <Sidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">
+          {adbHata && (
+            <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
+              {adbHata}
+            </div>
+          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={page}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {sayfalar[page] ?? <NotFoundView />}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
       <Toasts />
     </div>
   )

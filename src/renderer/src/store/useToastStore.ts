@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ToastType = 'success' | 'error' | 'info'
+export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
 export interface Toast {
   id: number
@@ -16,7 +16,7 @@ interface ToastState {
 
 let nextId = 1
 
-// Bildirim (toast) durumu (prompt 37/38).
+// Bildirim (toast) durumu: başarı, hata, uyarı, bilgi (prompt 81).
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
   push: (message, type = 'info') => {

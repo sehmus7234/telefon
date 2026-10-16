@@ -3,6 +3,7 @@ import type { Device, DeviceInfo, BackupFile, AdbRunResult } from '@shared/types
 import log from './logger'
 import * as adb from './services/adb'
 import { refreshDevices } from './poller'
+import { startScrcpy } from './scrcpy'
 
 // IPC kanalları: main süreçte ipcMain.handle ile tanımlanır, preload'da
 // contextBridge ile renderer'a açılır.
@@ -36,6 +37,7 @@ export function registerIpcHandlers(): void {
     adb.getDeviceInfo(serial)
   )
   ipcMain.handle('devices:refresh', () => refreshDevices())
+  ipcMain.handle('device:scrcpy', (_e, serial: string) => startScrcpy(serial))
   ipcMain.handle('devices:unauthorized', (): Promise<string[]> => adb.listUnauthorized())
 
   // Kablosuz (prompt 31)

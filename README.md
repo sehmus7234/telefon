@@ -266,6 +266,33 @@ Her komut ayrı ayrı parse edilir; biri başarısız olursa ilgili alan `null`/
 kalır, diğer alanları etkilemez. Bilgiler `device:info` olayıyla renderer'a gelir
 ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root).
 
+## Arayüz / Tasarım Sistemi (prompt 71-95)
+
+- **Layout (71):** `components/layout/Sidebar` (sol menü) + `Header` (üst) + orta içerik.
+  Sayfa yönlendirmesi `useNavStore` ile (react-router gerekmez).
+- **Menü (72):** Dashboard, Cihazlar, Yedekleme, Testler, Dosyalar, Ayarlar (SVG ikonlu).
+- **Palet (73):** Tailwind'de `brand` (mavi-mor) skalası; koyu tema ağırlıklı — yüzey
+  `surface` (#171923), arka plan #0f1117, accent gradyan brand->violet.
+- **Cihaz kartı (74/75):** `devices/DeviceCard` — ad, model, durum rozeti, pil ikonu;
+  Framer Motion ile hover scale + glow shadow.
+- **Dashboard (76):** bağlı cihaz, son yedekleme, toplam depolama, çevrimiçi oran kartları.
+- **Cihaz detay (77/78):** `DeviceDetailView` sekmeli (Genel/Uygulamalar/Dosyalar/Testler);
+  `AnimatePresence` + `layoutId` ile smooth sekme geçişi.
+- **UI bileşenleri (`components/ui/`):** Skeleton (79), EmptyState (80), Toast 4 tip (81),
+  Modal (82), ProgressBar (83), DataTable sıralama+filtre (84), SearchBar (85), Tooltip (86).
+- **Responsive (87):** Sidebar 900px altında otomatik daralır (ikon modu).
+- **Ayarlar (88):** tema, dil, ADB yolu, otomatik güncelleme (localStorage kalıcı).
+- **scrcpy (89):** Cihaz detayında "Canlı Ekran" butonu — scrcpy yüklüyse `scrcpy -s <serial>`
+  açar, değilse uyarı toast'ı.
+- **İkon/splash (90):** `build/icon.png`+`icon.ico` (512, çok boyutlu) ve `splash.html` (spinner).
+- **Font (91):** Inter (@fontsource/inter) — 400/500/600/700 paketlenmiş.
+- **Framer Motion (92):** `npm i framer-motion`; `motion` + `AnimatePresence` sayfa/sekme
+  geçişleri, toast, modal ve toggle animasyonları.
+- **Hata sayfaları (93):** `NotFoundView` (404); bağlantı hatası global banner + toast.
+- **Tema toggle (94):** `ui/ThemeToggle` — yay animasyonlu, güneş/ay ikonlu.
+- **Tipografi/spacing (95):** Tailwind config'de Inter + brand renk + keyframe animasyonları;
+  `card`, `btn-primary`, `btn-ghost` bileşen sınıfları.
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.
