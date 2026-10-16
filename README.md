@@ -320,6 +320,28 @@ dosyalarına dosya sistemi üzerinden erişilebilir. Drive/Dropbox için ileride
   `setSetting/getSetting`, `addLog`. Cihaz bilgisi bağlanınca `devices` tablosuna
   otomatik yazılır (poller.ts).
 
+## Cihaz Testleri (prompt 114-128)
+
+`src/main/services/tests/`:
+
+- `definitions.ts` — 12 donanım testi: ekran (114), dokunmatik/getevent (115),
+  hoparlör (116), mikrofon (117), kamera (118), titreşim (119), sensör (120),
+  Wi-Fi (121), Bluetooth (122), GPS (123), pil (124), USB (125). Her test = bir ADB
+  komutu + geçme koşulu (check) + özet (summary).
+- `runner.ts` — `runTests(serial)` tüm testleri sırayla çalıştırır; her biri için
+  pass/fail/error + çıktı + süre toplar (126/127).
+- `report.ts` — `exportPdf(report, path)` pdfkit ile PDF rapor üretir (128).
+
+**getevent (115):** `adb shell getevent -pl` giriş cihazlarını ve yeteneklerini
+listeler; dokunmatik ekran `ABS_MT_*` olaylarıyla görünür. Canlı izleme:
+`adb shell getevent -l` (dokunma koordinatlarını akış olarak basar).
+
+**Arayüz** (`views/TestsView.tsx`): "Tüm testleri çalıştır" butonu, sonuç listesi
+(pass/fail/error rozetleri) ve "PDF indir" (PDF'yi üretir + varsayılan görüntüleyicide açar).
+
+Notlar: renk testi ile hoparlör/mikrofon doğrulaması görsel/işitsel olduğu için
+komutlar ilgili ekranı/uygulamayı açar; otomatik pass/fail komut çıktısına göre belirlenir.
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.

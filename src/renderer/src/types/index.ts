@@ -18,5 +18,8 @@ export type {
   BackupEstimate,
   BackupHistoryItem,
   BackupProgress,
-  BackupStageResult
+  BackupStageResult,
+  TestStatus,
+  TestResult,
+  TestReport
 } from '@shared/types'

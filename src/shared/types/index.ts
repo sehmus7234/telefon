@@ -145,6 +145,26 @@ export interface BackupHistoryItem {
   createdAt: string
 }
 
+export type TestStatus = 'pass' | 'fail' | 'error'
+
+export interface TestResult {
+  id: string
+  name: string
+  status: TestStatus
+  output: string
+  durationMs: number
+  detail?: string
+}
+
+export interface TestReport {
+  deviceSerial: string
+  createdAt: string
+  total: number
+  passed: number
+  failed: number
+  results: TestResult[]
+}
+
 export type ThemeMode = 'light' | 'dark' | 'system'
 
 export interface AppSettings {

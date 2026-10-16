@@ -1,11 +1,20 @@
-import { ipcMain, dialog, app } from 'electron'
-import type { Device, DeviceInfo, BackupFile, AdbRunResult, BackupType } from '@shared/types'
+import { ipcMain, dialog, app, shell } from 'electron'
+import { join } from 'path'
+import type {
+  Device,
+  DeviceInfo,
+  BackupFile,
+  AdbRunResult,
+  BackupType,
+  TestReport
+} from '@shared/types'
 import log from './logger'
 import * as adb from './services/adb'
 import { refreshDevices } from './poller'
 import { startScrcpy } from './scrcpy'
 import { runBackup, restoreBackup, estimateBackup } from './services/backup'
 import { addBackup, listBackups, getBackup, deleteBackup } from './db'
+import { runTests, exportPdf } from './services/tests'
 
 // IPC kanalları: main süreçte ipcMain.handle ile tanımlanır, preload'da
 // contextBridge ile renderer'a açılır.
@@ -96,6 +105,15 @@ export function registerIpcHandlers(): void {
     const b = getBackup(id)
     if (!b) throw new Error('Yedek bulunamadı')
     return restoreBackup(b.deviceSerial, b.path)
+  })
+
+  // Cihaz testleri (prompt 114-128)
+  ipcMain.handle('tests:run', (_e, serial: string) => runTests(serial))
+  ipcMain.handle('tests:export-pdf', async (_e, report: TestReport) => {
+    const file = join(app.getPath('userData'), `test-raporu-${Date.now()}.pdf`)
+    await exportPdf(report, file)
+    void shell.openPath(file)
+    return file
   })
 
   // Komut geçmişi (prompt 27)

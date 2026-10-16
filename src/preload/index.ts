@@ -11,7 +11,8 @@ import type {
   BackupEstimate,
   BackupHistoryItem,
   BackupProgress,
-  BackupReport
+  BackupReport,
+  TestReport
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -67,6 +68,11 @@ const api = {
   listBackups: (): Promise<BackupHistoryItem[]> => ipcRenderer.invoke('backup:list'),
   deleteBackup: (id: number): Promise<boolean> => ipcRenderer.invoke('backup:delete', id),
   restoreBackup: (id: number): Promise<string> => ipcRenderer.invoke('backup:restore', id),
+
+  // Cihaz testleri (114-128)
+  runTests: (serial: string): Promise<TestReport> => ipcRenderer.invoke('tests:run', serial),
+  exportTestPdf: (report: TestReport): Promise<string> =>
+    ipcRenderer.invoke('tests:export-pdf', report),
 
   // Olaylar (prompt 48)
   onDevicesChanged: (cb: (devices: Device[]) => void): (() => void) =>
