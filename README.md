@@ -437,12 +437,14 @@ Gerçek bellek sızıntısı analizi (159) — `--inspect` + CDP heap snapshot f
 
 ```bash
 npm run dev:inspect     # ana süreci --inspect=9229 ile başlatır
-npm run heap:check      # iki heap anlık görüntüsü alıp büyüyen sınıfları listeler
-# seçenekler: --port 9229 --delay 4000 --top 15
+npm run heap:check      # heap anlık görüntüleri alıp sürekli büyüyen sınıfları listeler
+# seçenekler: --port 9229 --samples 4 --delay 4000 --min-intervals 2 --top 15
 ```
 
-`scripts/heap-leak-check.mjs` inspector'a bağlanır, iki `takeHeapSnapshot` alır (arada GC)
-ve nesne sayısı/self-size artan sınıfları olası sızıntı adayı olarak raporlar.
+`scripts/heap-leak-check.mjs` inspector'a bağlanır, N heap anlık görüntüsü alır (arada GC)
+ve ardışık aralıklarda SÜREKLİ büyüyen sınıfları sızıntı adayı olarak raporlar.
+`--samples 2` tek seferlik farktır; `--samples 4` gibi çok örnek, tek seferlik büyüme ile
+gerçek sızıntıyı ayırır (`aralık` sütunu kaç aralıkta büyüdüğünü gösterir; 3/3 güçlü işarettir).
 
 Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlikte test eder
 (58 asılırlık); endpoint yükleme yerel bir HTTP sunucusuyla doğrulanır.
