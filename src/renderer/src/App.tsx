@@ -6,9 +6,11 @@ import { useAdbBridge } from './hooks/useAdbBridge'
 import { useNavStore, type PageId } from './store/useNavStore'
 import { useAdbStore } from './store/useAdbStore'
 import { useDeviceStore } from './store/useDeviceStore'
+import { useSessionStore } from './store/useSessionStore'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Toasts from './components/Toasts'
+import AppLock from './components/AppLock'
 import DashboardView from './views/DashboardView'
 import DevicesView from './views/DevicesView'
 import DeviceDetailView from './views/DeviceDetailView'
@@ -27,13 +29,16 @@ export default function App() {
   const surumYukle = useAdbStore((s) => s.surumYukle)
   const gecmisYukle = useAdbStore((s) => s.gecmisYukle)
   const adbHata = useAdbStore((s) => s.hata)
+  const oturumKilitli = useSessionStore((s) => s.state.locked)
+  const oturumYukle = useSessionStore((s) => s.yukle)
 
   useEffect(() => {
     void durumYukle()
     void surumYukle()
     void gecmisYukle()
     void useDeviceStore.getState().listele()
-  }, [durumYukle, surumYukle, gecmisYukle])
+    void oturumYukle()
+  }, [durumYukle, surumYukle, gecmisYukle, oturumYukle])
 
   const sayfalar: Record<PageId, ReactNode> = {
     dashboard: <DashboardView />,
@@ -70,6 +75,7 @@ export default function App() {
         </main>
       </div>
       <Toasts />
+      {oturumKilitli && <AppLock />}
     </div>
   )
 }

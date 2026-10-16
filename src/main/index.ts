@@ -7,6 +7,7 @@ import { setupAutoUpdater } from './updater'
 import { startDevicePolling, stopDevicePolling, refreshDevices } from './poller'
 import { startUsbWatcher } from './usbWatcher'
 import { initDb, closeDb } from './db'
+import { initSecretStore } from './services/security'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -63,9 +64,11 @@ if (!gotTheLock) {
     }
   })
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     setupLogger()
     log.info('Uygulama başlatılıyor...')
+    // Şifreli ayar deposu (147) DB'den önce başlatılmalı (secure settings master key).
+    await initSecretStore(app.getPath('userData'))
     initDb(join(app.getPath('userData'), 'telefon.db'))
 
     registerIpcHandlers()

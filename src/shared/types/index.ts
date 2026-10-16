@@ -114,6 +114,7 @@ export interface BackupReport {
   types: BackupType[]
   dir: string
   zipPath?: string
+  encrypted?: boolean
   fileCount: number
   sizeBytes: number
   durationMs: number
@@ -142,6 +143,7 @@ export interface BackupHistoryItem {
   sizeBytes: number
   durationMs: number
   status: string
+  encrypted: boolean
   createdAt: string
 }
 
@@ -214,5 +216,37 @@ export interface AdbRunResult {
   code: number | null
   timedOut: boolean
   aborted: boolean
+  error?: string
+}
+
+// --- Güvenlik tipleri (prompt 141-150) ---
+
+export interface AdbKeyInfo {
+  exists: boolean
+  keyDir: string
+  privatePath: string
+  publicPath: string
+  fingerprintMd5: string | null
+  fingerprintSha256: string | null
+  comment: string | null
+}
+
+export interface DangerousCommandInfo {
+  dangerous: boolean
+  reason: string | null
+}
+
+export interface SessionState {
+  hasPassword: boolean
+  locked: boolean
+}
+
+export interface SecurityUpdateStatus {
+  checked: boolean
+  checkedAt: string | null
+  currentVersion: string
+  electronVersion: string
+  hasSecurityUpdates: boolean
+  advisories: string[]
   error?: string
 }

@@ -38,6 +38,12 @@ export async function zipFolder(
   return { sizeBytes: st.size, fileCount }
 }
 
+// Zip'i bir hedef klasöre açar (şifreli yedek geri yüklemede kullanılır, 145).
+export async function unzipFolder(zipPath: string, destDir: string): Promise<void> {
+  const zip = new AdmZip(zipPath)
+  zip.extractAllTo(destDir, true)
+}
+
 // Yedekleme öncesi tahmin (prompt 105): `du -sk` ile boyut, hız varsayımıyla süre.
 const ADB_SPEED_BPS = 5 * 1024 * 1024 // 5 MB/s (USB 2.0 yaklaşık)
 

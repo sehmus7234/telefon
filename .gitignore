@@ -6,3 +6,6 @@ dist/
 .DS_Store
 .env
 .env.*
+
+# headless selfcheck derleme çıktısı
+scripts/.security.selfcheck.cjs

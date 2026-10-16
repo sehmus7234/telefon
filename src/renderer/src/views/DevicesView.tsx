@@ -3,6 +3,8 @@ import { useDeviceStore } from '../store/useDeviceStore'
 import DeviceCard from '../components/devices/DeviceCard'
 import DeviceSelect from '../components/DeviceSelect'
 import WirelessConnect from '../components/WirelessConnect'
+import UnauthorizedGuide from '../components/UnauthorizedGuide'
+import AdbAuthGuide from '../components/AdbAuthGuide'
 import SearchBar from '../components/ui/SearchBar'
 import EmptyState from '../components/ui/EmptyState'
 import { DeviceCardSkeleton } from '../components/ui/Skeleton'
@@ -29,6 +31,8 @@ export default function DevicesView() {
         <DeviceSelect />
       </div>
 
+      <UnauthorizedGuide />
+
       {taraniyor && cihazlar.length === 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
@@ -49,6 +53,8 @@ export default function DevicesView() {
       )}
 
       <WirelessConnect />
+
+      <AdbAuthGuide />
     </div>
   )
 }

@@ -17,7 +17,10 @@ interface AdbState {
   serverBaslat: () => Promise<void>
   serverDurdur: () => Promise<void>
   serverYenidenBaslat: () => Promise<void>
-  komutCalistir: (args: string[], opts?: { serial?: string; timeoutMs?: number }) => Promise<void>
+  komutCalistir: (
+    args: string[],
+    opts?: { serial?: string; timeoutMs?: number; confirmed?: boolean }
+  ) => Promise<void>
   komutIptal: () => Promise<void>
   sonucIsle: (r: AdbRunResult) => void
   hataAta: (mesaj: string) => void

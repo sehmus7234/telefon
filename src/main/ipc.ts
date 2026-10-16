@@ -7,16 +7,27 @@ import type {
   BackupFile,
   AdbRunResult,
   BackupType,
-  TestReport
+  TestReport,
+  SecurityUpdateStatus
 } from '@shared/types'
 import log from './logger'
 import * as adb from './services/adb'
 import { refreshDevices } from './poller'
 import { startScrcpy } from './scrcpy'
 import { runBackup, restoreBackup, estimateBackup } from './services/backup'
-import { addBackup, listBackups, getBackup, deleteBackup } from './db'
+import {
+  addBackup,
+  listBackups,
+  getBackup,
+  deleteBackup,
+  setSecureSetting,
+  getSecureSetting,
+  deleteSecureSetting
+} from './db'
 import { runTests, exportPdf } from './services/tests'
 import { listFiles, pullFile, pushFile, deleteFile, createFolder } from './services/files'
+import * as security from './services/security'
+import { classifyCommand } from './services/security'
 
 // IPC kanalları: main süreçte ipcMain.handle ile tanımlanır, preload'da
 // contextBridge ile renderer'a açılır.
@@ -69,7 +80,17 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     'backup:run',
-    (event, opts: { serial: string; types?: BackupType[]; exclude?: string[]; zip?: boolean }) => {
+    (
+      event,
+      opts: {
+        serial: string
+        types?: BackupType[]
+        exclude?: string[]
+        zip?: boolean
+        encrypt?: boolean
+        password?: string
+      }
+    ) => {
       const runId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
       const controller = new AbortController()
       activeBackups.set(runId, controller)
@@ -103,10 +124,10 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle('backup:list', () => listBackups())
   ipcMain.handle('backup:delete', (_e, id: number) => deleteBackup(id))
-  ipcMain.handle('backup:restore', async (_e, id: number) => {
+  ipcMain.handle('backup:restore', async (_e, id: number, password?: string) => {
     const b = getBackup(id)
     if (!b) throw new Error('Yedek bulunamadı')
-    return restoreBackup(b.deviceSerial, b.path)
+    return restoreBackup(b.deviceSerial, b.path, {}, password)
   })
 
   // Cihaz testleri (prompt 114-128)
@@ -148,10 +169,15 @@ export function registerIpcHandlers(): void {
     return true
   })
 
-  // İptal edilebilir genel komut (prompt 32/34)
+  // İptal edilebilir genel komut (prompt 32/34) + tehlikeli komut onayı (prompt 148).
   ipcMain.handle(
     'adb:run',
-    (event, args: string[], opts?: { serial?: string; timeoutMs?: number }) => {
+    (event, args: string[], opts?: { serial?: string; timeoutMs?: number; confirmed?: boolean }) => {
+      // Tehlikeli komutlarda kullanıcı onayı şart (148).
+      const danger = classifyCommand(args)
+      if (danger.dangerous && !opts?.confirmed) {
+        throw new Error(`ONAY GEREKLİ: ${danger.reason}`)
+      }
       const { id, promise } = adb.runAbortable(args, opts)
       promise
         .then((r) => {
@@ -179,4 +205,72 @@ export function registerIpcHandlers(): void {
     const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     return result.canceled ? null : result.filePaths[0]
   })
+
+  // --- Güvenlik (prompt 141-150) ---
+
+  // ADB anahtar yönetimi (143) + parmak izi (141)
+  ipcMain.handle('adb:key:info', () => security.getAdbKeyInfo())
+  ipcMain.handle('adb:key:ensure', () => security.ensureAdbKey())
+  ipcMain.handle('adb:key:rotate', () => security.rotateAdbKey())
+  ipcMain.handle('adb:key:delete', () => security.deleteAdbKey())
+
+  // Tehlikeli komut sınıflandırma + onay (148)
+  ipcMain.handle('adb:command:classify', (_e, args: string[]) => classifyCommand(args))
+  ipcMain.handle('adb:command:confirm', async (_e, args: string[]) => {
+    const info = classifyCommand(args)
+    if (!info.dangerous) return true
+    const { response } = await dialog.showMessageBox({
+      type: 'warning',
+      buttons: ['Onayla', 'Vazgeç'],
+      defaultId: 1,
+      cancelId: 1,
+      title: 'Tehlikeli ADB komutu',
+      message: 'Bu komut tehlikeli olabilir. Devam etmek istiyor musunuz?',
+      detail: `${args.join(' ')}\n\n${info.reason}`
+    })
+    return response === 0
+  })
+
+  // Oturum yönetimi (146)
+  ipcMain.handle('security:session:state', () => security.sessionState())
+  ipcMain.handle('security:session:set-password', (_e, password: string) => {
+    security.setMasterPassword(password)
+    return security.sessionState()
+  })
+  ipcMain.handle('security:session:unlock', (_e, password: string) => {
+    security.unlock(password)
+    return security.sessionState()
+  })
+  ipcMain.handle('security:session:lock', () => {
+    security.lock()
+    return security.sessionState()
+  })
+  ipcMain.handle('security:session:change-password', (_e, oldPw: string, newPw: string) => {
+    const ok = security.changeMasterPassword(oldPw, newPw)
+    if (!ok) throw new Error('Mevcut parola hatalı.')
+    return security.sessionState()
+  })
+  ipcMain.handle('security:session:remove-password', (_e, password: string) => {
+    const ok = security.removeMasterPassword(password)
+    if (!ok) throw new Error('Parola hatalı.')
+    return security.sessionState()
+  })
+
+  // Şifreli ayar deposu (147)
+  ipcMain.handle('security:secure-setting:set', (_e, key: string, value: string) => {
+    setSecureSetting(key, value)
+  })
+  ipcMain.handle('security:secure-setting:get', (_e, key: string) => getSecureSetting(key))
+  ipcMain.handle('security:secure-setting:delete', (_e, key: string) => deleteSecureSetting(key))
+
+  // Güvenlik güncelleme kontrolü (150)
+  let lastSecurityStatus: SecurityUpdateStatus | null = null
+  ipcMain.handle('security:updates:check', async (): Promise<SecurityUpdateStatus> => {
+    lastSecurityStatus = await security.checkSecurityUpdates({
+      currentVersion: app.getVersion(),
+      electronVersion: process.versions.electron ?? '0.0.0'
+    })
+    return lastSecurityStatus
+  })
+  ipcMain.handle('security:updates:status', (): SecurityUpdateStatus | null => lastSecurityStatus)
 }

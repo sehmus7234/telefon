@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3'
 import { migrate } from './migrations'
+import { encryptSecret, decryptSecret } from '../services/security/secretStore'
 import type { BackupReport, BackupHistoryItem } from '@shared/types'
 
 let db: Database.Database | null = null
@@ -31,8 +32,8 @@ export function addBackup(report: BackupReport): number {
   const r = getDb()
     .prepare(
       `INSERT INTO backups
-        (device_serial, type, path, file_count, size_bytes, duration_ms, status, report, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        (device_serial, type, path, file_count, size_bytes, duration_ms, status, report, created_at, encrypted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       report.deviceSerial,
@@ -43,7 +44,8 @@ export function addBackup(report: BackupReport): number {
       report.durationMs,
       report.status,
       JSON.stringify(report),
-      report.createdAt
+      report.createdAt,
+      report.encrypted ? 1 : 0
     )
   return Number(r.lastInsertRowid)
 }
@@ -53,7 +55,8 @@ export function listBackups(limit = 100): BackupHistoryItem[] {
     .prepare(
       `SELECT id, device_serial AS deviceSerial, type, path,
               file_count AS fileCount, size_bytes AS sizeBytes,
-              duration_ms AS durationMs, status, created_at AS createdAt
+              duration_ms AS durationMs, status, created_at AS createdAt,
+              encrypted AS encrypted
        FROM backups ORDER BY created_at DESC LIMIT ?`
     )
     .all(limit) as BackupHistoryItem[]
@@ -133,4 +136,32 @@ export function addLog(level: string, message: string): void {
   getDb()
     .prepare('INSERT INTO logs (level, message, created_at) VALUES (?, ?, ?)')
     .run(level, message, new Date().toISOString())
+}
+
+// --- şifreli ayar deposu (prompt 147) ---
+// Değerler diske yazılmadan önce secretStore ile şifrelenir.
+export function setSecureSetting(key: string, value: string): void {
+  getDb()
+    .prepare(
+      'INSERT INTO secure_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+    )
+    .run(key, encryptSecret(value))
+}
+
+export function getSecureSetting(key: string): string | null {
+  const row = getDb().prepare('SELECT value FROM secure_settings WHERE key = ?').get(key) as
+    | { value: string }
+    | undefined
+  if (!row) return null
+  return decryptSecret(row.value)
+}
+
+export function deleteSecureSetting(key: string): boolean {
+  return getDb().prepare('DELETE FROM secure_settings WHERE key = ?').run(key).changes > 0
+}
+
+export function listSecureSettingKeys(): string[] {
+  return (getDb().prepare('SELECT key FROM secure_settings').all() as { key: string }[]).map(
+    (r) => r.key
+  )
 }

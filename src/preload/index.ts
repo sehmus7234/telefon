@@ -13,7 +13,11 @@ import type {
   BackupProgress,
   BackupReport,
   TestReport,
-  FileEntry
+  FileEntry,
+  AdbKeyInfo,
+  DangerousCommandInfo,
+  SessionState,
+  SecurityUpdateStatus
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -52,23 +56,38 @@ const api = {
   clearHistory: (): Promise<boolean> => ipcRenderer.invoke('adb:history:clear'),
   runCommand: (
     args: string[],
-    opts?: { serial?: string; timeoutMs?: number }
+    opts?: { serial?: string; timeoutMs?: number; confirmed?: boolean }
   ): Promise<string> => ipcRenderer.invoke('adb:run', args, opts),
   cancelCommand: (runId: string): Promise<boolean> => ipcRenderer.invoke('adb:cancel', runId),
 
-  // Yedekleme (96-110)
+  // ADB anahtar yönetimi + parmak izi (141/143)
+  getAdbKeyInfo: (): Promise<AdbKeyInfo> => ipcRenderer.invoke('adb:key:info'),
+  ensureAdbKey: (): Promise<AdbKeyInfo> => ipcRenderer.invoke('adb:key:ensure'),
+  rotateAdbKey: (): Promise<AdbKeyInfo> => ipcRenderer.invoke('adb:key:rotate'),
+  deleteAdbKey: (): Promise<boolean> => ipcRenderer.invoke('adb:key:delete'),
+
+  // Tehlikeli komut sınıflandırma + onay (148)
+  classifyCommand: (args: string[]): Promise<DangerousCommandInfo> =>
+    ipcRenderer.invoke('adb:command:classify', args),
+  confirmDangerousCommand: (args: string[]): Promise<boolean> =>
+    ipcRenderer.invoke('adb:command:confirm', args),
+
+  // Yedekleme (96-110 + şifreleme 145)
   runBackup: (opts: {
     serial: string
     types?: BackupType[]
     exclude?: string[]
     zip?: boolean
+    encrypt?: boolean
+    password?: string
   }): Promise<string> => ipcRenderer.invoke('backup:run', opts),
   cancelBackup: (runId: string): Promise<boolean> => ipcRenderer.invoke('backup:cancel', runId),
   estimateBackup: (serial: string, paths: string[]): Promise<BackupEstimate> =>
     ipcRenderer.invoke('backup:estimate', serial, paths),
   listBackups: (): Promise<BackupHistoryItem[]> => ipcRenderer.invoke('backup:list'),
   deleteBackup: (id: number): Promise<boolean> => ipcRenderer.invoke('backup:delete', id),
-  restoreBackup: (id: number): Promise<string> => ipcRenderer.invoke('backup:restore', id),
+  restoreBackup: (id: number, password?: string): Promise<string> =>
+    ipcRenderer.invoke('backup:restore', id, password),
 
   // Cihaz testleri (114-128)
   runTests: (serial: string): Promise<TestReport> => ipcRenderer.invoke('tests:run', serial),
@@ -89,6 +108,32 @@ const api = {
   getThumbnail: (serial: string, remotePath: string): Promise<string | null> =>
     ipcRenderer.invoke('files:thumbnail', serial, remotePath),
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
+
+  // Oturum yönetimi (146)
+  getSessionState: (): Promise<SessionState> => ipcRenderer.invoke('security:session:state'),
+  setSessionPassword: (password: string): Promise<SessionState> =>
+    ipcRenderer.invoke('security:session:set-password', password),
+  unlockSession: (password: string): Promise<SessionState> =>
+    ipcRenderer.invoke('security:session:unlock', password),
+  lockSession: (): Promise<SessionState> => ipcRenderer.invoke('security:session:lock'),
+  changeSessionPassword: (oldPassword: string, newPassword: string): Promise<SessionState> =>
+    ipcRenderer.invoke('security:session:change-password', oldPassword, newPassword),
+  removeSessionPassword: (password: string): Promise<SessionState> =>
+    ipcRenderer.invoke('security:session:remove-password', password),
+
+  // Şifreli ayar deposu (147)
+  setSecureSetting: (key: string, value: string): Promise<void> =>
+    ipcRenderer.invoke('security:secure-setting:set', key, value),
+  getSecureSetting: (key: string): Promise<string | null> =>
+    ipcRenderer.invoke('security:secure-setting:get', key),
+  deleteSecureSetting: (key: string): Promise<boolean> =>
+    ipcRenderer.invoke('security:secure-setting:delete', key),
+
+  // Güvenlik güncelleme kontrolü (150)
+  checkSecurityUpdates: (): Promise<SecurityUpdateStatus> =>
+    ipcRenderer.invoke('security:updates:check'),
+  getSecurityUpdatesStatus: (): Promise<SecurityUpdateStatus | null> =>
+    ipcRenderer.invoke('security:updates:status'),
 
   // Olaylar (prompt 48)
   onDevicesChanged: (cb: (devices: Device[]) => void): (() => void) =>

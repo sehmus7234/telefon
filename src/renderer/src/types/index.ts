@@ -23,5 +23,9 @@ export type {
   TestResult,
   TestReport,
   FileEntry,
-  FileKind
+  FileKind,
+  AdbKeyInfo,
+  DangerousCommandInfo,
+  SessionState,
+  SecurityUpdateStatus
 } from '@shared/types'

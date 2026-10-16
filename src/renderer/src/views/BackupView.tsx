@@ -21,6 +21,10 @@ export default function BackupView() {
   const [seciliTipler, setSeciliTipler] = useState<BackupType[]>(['photos', 'contacts', 'sms'])
   const [exclude, setExclude] = useState('Thumbnails')
   const [zip, setZip] = useState(true)
+  const [sifrele, setSifrele] = useState(false)
+  const [parola, setParola] = useState('')
+  const [sifreIstenen, setSifreIstenen] = useState<number | null>(null)
+  const [geriYuklemeParolasi, setGeriYuklemeParolasi] = useState('')
   const [tahmin, setTahmin] = useState<{ totalBytes: number; estimatedSeconds: number } | null>(null)
   const [calisiyor, setCalisiyor] = useState(false)
   const [runId, setRunId] = useState<string | null>(null)
@@ -64,6 +68,10 @@ export default function BackupView() {
 
   const baslat = async () => {
     if (!seciliCihaz || seciliTipler.length === 0) return
+    if (sifrele && !parola) {
+      push('Şifreli yedek için bir parola girin.', 'warning')
+      return
+    }
     setCalisiyor(true)
     setSonRapor(null)
     setIlerleme(null)
@@ -74,7 +82,9 @@ export default function BackupView() {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
-      zip
+      zip: zip || sifrele, // şifreleme arşiv gerektirir
+      encrypt: sifrele,
+      password: sifrele ? parola : undefined
     })
     setRunId(id)
   }
@@ -90,8 +100,26 @@ export default function BackupView() {
   }
 
   const geriYukle = async (id: number) => {
+    const b = gecmis.find((x) => x.id === id)
     try {
-      push(await window.api.restoreBackup(id), 'success')
+      if (b?.encrypted) {
+        // Şifreli yedek: önce parola istenir (145).
+        if (sifreIstenen !== id) {
+          setSifreIstenen(id)
+          setGeriYuklemeParolasi('')
+          return
+        }
+        if (!geriYuklemeParolasi) {
+          push('Şifreli yedeği açmak için parola girin.', 'warning')
+          return
+        }
+        const pw = geriYuklemeParolasi
+        setSifreIstenen(null)
+        setGeriYuklemeParolasi('')
+        push(await window.api.restoreBackup(id, pw), 'success')
+      } else {
+        push(await window.api.restoreBackup(id), 'success')
+      }
     } catch (e) {
       push(e instanceof Error ? e.message : 'Geri yükleme başarısız', 'error')
     }
@@ -144,6 +172,26 @@ export default function BackupView() {
           <input type="checkbox" checked={zip} onChange={(e) => setZip(e.target.checked)} />
           Zip olarak sıkıştır (104)
         </label>
+
+        <div className="rounded-md border border-gray-200 p-3 dark:border-gray-700">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={sifrele}
+              onChange={(e) => setSifrele(e.target.checked)}
+            />
+            Yedeği şifrele (AES-256-GCM, 145)
+          </label>
+          {sifrele && (
+            <input
+              type="password"
+              value={parola}
+              onChange={(e) => setParola(e.target.value)}
+              placeholder="Şifreleme parolası"
+              className={`${inputCls} mt-2`}
+            />
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <button onClick={() => void tahminAl()} className="btn-ghost">
@@ -208,10 +256,17 @@ export default function BackupView() {
               <li key={b.id} className="rounded-md border border-gray-200 p-3 text-sm dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{b.type}</span>
-                  <span
-                    className={`text-xs ${b.status === 'completed' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}
-                  >
-                    {b.status}
+                  <span className="flex items-center gap-2">
+                    {b.encrypted && (
+                      <span className="rounded bg-violet-100 px-1.5 py-0.5 text-xs text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                        🔒 şifreli
+                      </span>
+                    )}
+                    <span
+                      className={`text-xs ${b.status === 'completed' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}
+                    >
+                      {b.status}
+                    </span>
                   </span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -220,6 +275,20 @@ export default function BackupView() {
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   {formatBytes(b.sizeBytes)} · {b.fileCount} dosya · {(b.durationMs / 1000).toFixed(1)} sn
                 </div>
+                {sifreIstenen === b.id && (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="password"
+                      value={geriYuklemeParolasi}
+                      onChange={(e) => setGeriYuklemeParolasi(e.target.value)}
+                      placeholder="Yedek parolası"
+                      className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800"
+                    />
+                    <button onClick={() => void geriYukle(b.id)} className="btn-primary text-xs">
+                      Aç
+                    </button>
+                  </div>
+                )}
                 <div className="mt-2 flex gap-2">
                   <button onClick={() => void geriYukle(b.id)} className="btn-ghost text-xs">
                     Geri yükle (103)

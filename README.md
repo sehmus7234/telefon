@@ -356,6 +356,49 @@ komutlar ilgili ekranı/uygulamayı açar; otomatik pass/fail komut çıktısın
   ve data URL olarak gösterilir.
 - Sağ tık menüsü (140) — Aç / İndir / Sil.
 
+## Güvenlik (prompt 141-150)
+
+`src/main/services/security/` altında toplanan güvenlik katmanı; hepsi saf Node
+(electron bağımsız) ve headless test edilebilir:
+
+- `encryption.ts` — AES-256-GCM + scrypt; metin ve dosya (akışlı) şifreleme, parola
+  hash/doğrulama, SHA-256 özet. Yedek şifrelemede (145) ve ayar deposunda (147) kullanılır.
+- `adbKey.ts` — ADB RSA anahtar yönetimi (143) + parmak izi (141). Anahtar yoksa
+  otomatik üretir (önce `adb keygen`, yoksa Node crypto fallback: PKCS#8 PEM özel anahtar
+  + PKCS#1 DER tabanlı `adbkey.pub`). `rotateAdbKey`/`deleteAdbKey` ile yönetim.
+  Parmak izi = `adbkey.pub` içindeki blob'un MD5'i (adb'nin ekranda gösterdiği) + SHA-256.
+- `secretStore.ts` — `userData/security/master.key` (rastgele 32B) ile AES-256-GCM
+  şifreleme; DB'deki `secure_settings` tablosu bu katmanı kullanır (147).
+- `session.ts` — opsiyonel ana parola ile uygulama kilidi (146). Parola hash'i scrypt ile
+  şifreli ayar deposunda saklanır; oturum bellekte tutulur, kapanınca kilitlenir.
+- `dangerous.ts` — tehlikeli ADB komutlarını sınıflandırır (148): `reboot`, `shell rm/su/dd/mount`,
+  `uninstall`, `push /system`, `pm clear/uninstall` vb.
+- `redact.ts` — log maskeleme (149): IMEI, MAC, seri no, token/parola, uzun hash.
+- `securityUpdates.ts` — GitHub Security Advisories'ten Electron güvenlik bültenlerini çeker
+  ve mevcut sürümü etkileyenleri listeler (150).
+
+Arayüz tarafı:
+
+- `AdbAuthGuide` (141) — RSA yetkilendirme sürecini açıklar + parmak izini gösterir
+  (Cihazlar sayfasında).
+- `UnauthorizedGuide` (142) — cihaz "yetkisiz" olduğunda adım adım rehber gösterir.
+- `SecuritySettings` (146/147/150) — Ayarlar sayfasında oturum (parola belirle/kilitle/
+  değiştir/kaldır), şifreli ayar deposu ve güvenlik güncelleme kontrolü.
+- `AppLock` (146) — oturum kilitliyken tam ekran kilit ekranı.
+- `CommandConsole` (148) — tehlikeli komutta önce sınıflandırıp native onay kutusu açar;
+  sunucu tarafında da `adb:run` onaysız tehlikeli komutu reddeder (savunma katmanı).
+- `BackupView` (145) — "Yedeği şifrele" seçeneği + parola; şifreli yedek geri yüklemede
+  parola ister. Şifreleme, zip'i AES-256-GCM ile `backup.zip.enc`'e çevirir.
+
+Doğrulama: `scripts/security.selfcheck.ts` tüm güvenlik fonksiyonlarını headless test
+eder (35 asılırlık). Çalıştırma:
+
+```bash
+npx esbuild scripts/security.selfcheck.ts --bundle --platform=node --format=cjs \
+  --external:better-sqlite3 --outfile=scripts/.security.selfcheck.cjs
+node scripts/.security.selfcheck.cjs
+```
+
 ## İkon ve Paketleme
 
 - `build/icon.png` (512x512) + `build/icon.ico` (çok boyutlu) uygulama logosu.

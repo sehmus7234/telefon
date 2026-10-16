@@ -54,6 +54,20 @@ export const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_backups_created ON backups(created_at);
       `)
     }
+  },
+  {
+    version: 2,
+    name: 'security-settings-and-encrypted-backups',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS secure_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        );
+
+        ALTER TABLE backups ADD COLUMN encrypted INTEGER DEFAULT 0;
+      `)
+    }
   }
 ]
 

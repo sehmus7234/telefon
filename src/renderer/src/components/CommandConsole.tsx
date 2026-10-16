@@ -11,9 +11,22 @@ export default function CommandConsole() {
   const komutIptal = useAdbStore((s) => s.komutIptal)
   const gecmisYukle = useAdbStore((s) => s.gecmisYukle)
 
-  const calistir = () => {
+  const calistir = async () => {
     const args = komut.trim().split(/\s+/).filter(Boolean)
-    if (args.length) void komutCalistir(args)
+    if (!args.length) return
+    // Tehlikeli komutlarda kullanıcı onayı istenir (148).
+    try {
+      const sinif = await window.api.classifyCommand(args)
+      if (sinif.dangerous) {
+        const onay = await window.api.confirmDangerousCommand(args)
+        if (!onay) return
+        void komutCalistir(args, { confirmed: true })
+        return
+      }
+    } catch {
+      // sınıflandırma/onay alınamadı; yine de sunucu tarafı kontrol eder
+    }
+    void komutCalistir(args)
   }
 
   return (
