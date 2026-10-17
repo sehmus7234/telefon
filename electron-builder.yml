@@ -45,5 +45,5 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 publish:
   provider: github
-  owner: PATRON # <-- GitHub kullanıcı/org adınızla değiştirin (docs/AUTO_UPDATE.md)
+  owner: patron # <-- GitHub kullanıcı/org adınızla değiştirin (docs/AUTO_UPDATE.md)
   repo: telefon
