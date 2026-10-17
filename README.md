@@ -254,7 +254,9 @@ Yedekler `userData/backups/<cihaz>-<zaman>/` altına yazılır.
 bilgilerini tek bir JSON objesinde toplar (prompt 70):
 
 - model (51), üretici (52), Android sürümü (53), API seviyesi (54), seri no (55)
-- IMEI (56) — `dumpsys iphonesubinfo`, yalnızca okuma; Android 10+ genelde boş döner
+- IMEI (56) — `dumpsys iphonesubinfo`, yalnızca okuma; boşsa `gsm.imei`,
+  `persist.radio.imei` gibi getprop anahtarları denenir; Android 10+ root'suz cihazlarda
+  genelde boş döner
 - pil: seviye (57), sağlık + sıcaklık (58) — arayüzde gösterilir
 - ekran çözünürlüğü (59) + DPI (60)
 - CPU (61), RAM (62), depolama (63) — `/proc/cpuinfo`, `/proc/meminfo`, `df /data`
@@ -270,7 +272,8 @@ ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root
 
 - **Layout (71):** `components/layout/Sidebar` (sol menü) + `Header` (üst) + orta içerik.
   Sayfa yönlendirmesi `useNavStore` ile (react-router gerekmez).
-- **Menü (72):** Dashboard, Cihazlar, Yedekleme, Testler, Dosyalar, Ayarlar (SVG ikonlu).
+- **Menü (72):** Dashboard, Cihazlar, Telefon IMEI, Yedekleme, Testler, Dosyalar, Ayarlar
+  (SVG ikonlu).
 - **Palet (73):** Tailwind'de `brand` (mavi-mor) skalası; koyu tema ağırlıklı — yüzey
   `surface` (#171923), arka plan #0f1117, accent gradyan brand->violet.
 - **Cihaz kartı (74/75):** `devices/DeviceCard` — ad, model, durum rozeti, pil ikonu;
@@ -278,6 +281,8 @@ ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root
 - **Dashboard (76):** bağlı cihaz, son yedekleme, toplam depolama, çevrimiçi oran kartları.
 - **Cihaz detay (77/78):** `DeviceDetailView` sekmeli (Genel/Uygulamalar/Dosyalar/Testler);
   `AnimatePresence` + `layoutId` ile smooth sekme geçişi.
+- **Telefon IMEI sayfası:** `views/ImeiView` — bağlı cihazların IMEI'sini kart olarak
+  gösterir (Kopyala + Yenile); cihaz bağlanınca veya uygulama açılışında bilgi otomatik çekilir.
 - **UI bileşenleri (`components/ui/`):** Skeleton (79), EmptyState (80), Toast 4 tip (81),
   Modal (82), ProgressBar (83), DataTable sıralama+filtre (84), SearchBar (85), Tooltip (86).
 - **Responsive (87):** Sidebar 900px altında otomatik daralır (ikon modu).
@@ -467,7 +472,7 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
   (renderer bileşenleri); main/services testleri `@jest-environment node` ile çalışır.
 - **Test dosyaları:** `tests/unit/` (adb parse/exec, hata çevirisi, maskeleme, tehlikeli
   komut, format) ve `tests/components/` (ProgressBar, EmptyState, DeviceStatusBadge,
-  DataTable). Toplam 60 test.
+  DataTable, ImeiView). Toplam 64 test.
 - **ADB mock'ları (162):** `tests/fixtures/fake-adb.sh` sahte adb ikilisidir;
   `ADB_PATH` ile yönlendirilip gerçek cihaz/adb olmadan `exec.ts` headless doğrulanır
   (version/devices/shell/timeout/hata kodu).
