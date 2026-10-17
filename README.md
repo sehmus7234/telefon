@@ -481,9 +481,9 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
 - **Playwright + `_electron`** (`playwright.config.ts` + `e2e/app.spec.ts`): derlenmiş
   uygulamayı (`out/main/index.js`) başlatır, ana pencerenin açıldığını doğrular.
 - Headless Linux'ta `xvfb-run -a npm run test:e2e`; root kapsayıcıda `--no-sandbox` şart.
-- **Bilinen engel:** better-sqlite3 v13 (N-API 10) Electron 33 (Node 20 / N-API 9) ile
-  uyumsuz; uygulama Electron altında `initDb`'de SIGSEGV verir. Çözüm: Electron >=35'e
-  yükseltmek veya better-sqlite3 <=11'e indirip `electron-rebuild` uygulamak.
+- **Native modül:** better-sqlite3 v13 (N-API 10) Electron 33 (Node 20/N-API 9) ile
+  uyumsuz olduğu için v11'e indirildi ve Electron'a göre derlendi. `npm run rebuild:native`
+  (electron-rebuild) taze kurulumda/CI'da binary'i Electron ABI'sine göre derler.
 
 ### CI/CD (166)
 

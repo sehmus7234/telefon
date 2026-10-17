@@ -2,11 +2,10 @@
 // Çalıştırmadan önce `npm run build` gerekir (out/main/index.js üretilir).
 // Headless: `xvfb-run -a npm run test:e2e`. Root kapsayıcıda --no-sandbox şart.
 //
-// BİLİNEN ENGELLEYİCİ: better-sqlite3 v13, N-API 10 (Node 22+) ister; Electron 33
-// (Node 20) yalnızca N-API 9 destekler. Bu yüzden uygulama Electron altında
-// `initDb` -> better-sqlite3 yüklenirken SIGSEGV verir. Çözüm: Electron'u >=35'e
-// yükseltmek veya better-sqlite3'ü <=11'e indirip `electron-rebuild` uygulamak.
-// Bu uyumsuzluk giderilene kadar E2E yalnızca Electron'un başladığını doğrular.
+// Native modül notu: better-sqlite3 v13 (N-API 10) Electron 33 (Node 20/N-API 9)
+// ile SIGSEGV verdiği için v11'e indirildi ve Electron'a göre derlendi
+// (`npm run rebuild:native` veya CI'daki electron-rebuild adımı). v11 ham V8 ABI
+// kullanır; Node ön-derlemesi Electron'da çalışmaz, Electron'a göre derlenmelidir.
 import { test, expect, _electron as electron } from '@playwright/test'
 import type { ElectronApplication, Page } from '@playwright/test'
 import electronModule from 'electron'

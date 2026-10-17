@@ -34,8 +34,6 @@ jobs:
         run: npm run test:coverage
 
   e2e:
-    # NOT: better-sqlite3 v13 (N-API 10) Electron 33 (Node 20/N-API 9) ile uyumsuz;
-    # bağımlılık düzeltilene kadar (Electron >=35 veya better-sqlite3 <=11) bu job kırmızı kalır.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +45,9 @@ jobs:
 
       - name: Bağımlılıkları kur (Electron ikilisiyle)
         run: npm install --no-audit --no-fund
+
+      - name: Native modülleri Electron için derle (better-sqlite3)
+        run: npm run rebuild:native
 
       - name: Electron sistem bağımlılıkları + Xvfb kur
         run: |
