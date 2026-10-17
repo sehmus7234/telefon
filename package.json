@@ -5,10 +5,10 @@
   "main": "./out/main/index.js",
   "author": "patron",
   "license": "MIT",
-  "homepage": "https://github.com/patron/telefon",
+  "homepage": "https://github.com/sehmus7234/telefon",
   "repository": {
     "type": "git",
-    "url": "https://github.com/patron/telefon.git"
+    "url": "https://github.com/sehmus7234/telefon.git"
   },
   "scripts": {
     "dev": "electron-vite dev",

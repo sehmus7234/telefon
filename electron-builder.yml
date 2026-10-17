@@ -45,5 +45,5 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 publish:
   provider: github
-  owner: patron
+  owner: sehmus7234
   repo: telefon
