@@ -1,15 +1,18 @@
 # platform-tools (ADB)
 
-Uygulama içine ADB binary'sini paketlemek için bu klasöre platform-tools içeriğini
-koy (prompt 18):
+Bu klasör, uygulama içine paketlenen ADB binary'lerini tutar.
+`electron-builder.yml` içindeki `extraResources` bloğu bu klasörü pakete dahil
+eder ve uygulama çalışma anında `process.resourcesPath/platform-tools/adb`
+yolundan bulur (`src/main/services/adb/paths.ts`).
 
-1. https://developer.android.com/tools/releases/platform-tools adresinden
-   işletim sistemine uygun platform-tools zip'ini indir.
-2. İçindeki `adb` (veya Windows'ta `adb.exe`) dosyasını bu klasöre kopyala.
-3. electron-builder.yml içindeki `extraResources` bloğu bu klasörü pakete dahil
-   eder ve uygulama çalışma anında `process.resourcesPath/platform-tools/adb`
-   yolundan bulur (`src/main/services/adb/paths.ts`).
+Mevcut durum:
 
-Not: adb Apache 2.0 lisanslıdır; yeniden dağıtımına izin verilir. Paket boyutu
-yaklaşık 15 MB artar. Klasör boşsa uygulama sistemdeki adb'yi (PATH / SDK)
-kullanmaya devam eder.
+- **Windows**: `adb.exe`, `AdbWinApi.dll`, `AdbWinUsbApi.dll`, `libwinpthread-1.dll`
+  gömülüdür (platform-tools 37.0.1). Kurulumdan sonra ayrıca platform-tools
+  kurmaya gerek kalmaz.
+- **macOS / Linux**: pakete gömülü adb yoktur; uygulama sistemdeki adb'yi
+  (PATH / SDK / ADB_PATH) kullanır. Eklemek için bu klasöre ilgili platformun
+  `adb` binary'sini koy (ikisi de `adb` adını kullandığından aynı anda gömülemez;
+  gerekirse electron-builder'da platforma özel `extraResources` kullan).
+
+Not: adb Apache 2.0 lisanslıdır; yeniden dağıtımına izin verilir.

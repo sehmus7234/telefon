@@ -20,6 +20,22 @@ biçiminde ve [SemVer](https://semver.org/lang/tr/) kurallarına göre kaydedili
 
 - better-sqlite3 ^13.0.3 → ^11.10.0 (Electron 33'te SIGSEGV'yi giderir).
 
+## [0.1.1] - 2026-10-17
+
+### Eklenenler
+
+- Windows paketine ADB (platform-tools 37.0.1) gömüldü: `adb.exe` + AdbWin
+  DLL'leri `resources/platform-tools` altına eklendi; kurulumdan sonra ayrıca
+  platform-tools kurmaya gerek kalmaz.
+- Ayarlar → "ADB yolu" alanı artık gerçekten çalışıyor: değer DB'ye kaydedilir,
+  main süreçte aktif ADB yolu olarak kullanılır (tam dosya yolu ya da klasör).
+
+### Düzeltilenler
+
+- "ADB yolu" ayarı yalnızca localStorage'a yazılıyor, main süreç hiç okumuyordu;
+  cihaz algılanamıyordu. Artık `adb:set-path`/`adb:get-path` IPC kanalları ve
+  `setConfiguredAdbPath` üzerinden bağlı.
+
 ## [0.1.0] - 2026-10-16
 
 ### Eklenenler

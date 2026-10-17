@@ -51,6 +51,14 @@ export function registerIpcHandlers(): void {
   // ADB durumu (prompt 17)
   ipcMain.handle('adb:status', () => adb.getAdbStatus())
 
+  // ADB yolu (kullanıcı ayarı): renderer'dan gelir, DB'ye yazılır ve aktif yol güncellenir.
+  ipcMain.handle('adb:get-path', () => getSetting('adbYolu'))
+  ipcMain.handle('adb:set-path', (_e, path: string) => {
+    adb.setConfiguredAdbPath(path)
+    setSetting('adbYolu', path ?? '')
+    return adb.getAdbStatus()
+  })
+
   // ADB sürümü (prompt 28)
   ipcMain.handle('adb:version', () => adb.getAdbVersion())
 
@@ -186,7 +194,11 @@ export function registerIpcHandlers(): void {
   // İptal edilebilir genel komut (prompt 32/34) + tehlikeli komut onayı (prompt 148).
   ipcMain.handle(
     'adb:run',
-    (event, args: string[], opts?: { serial?: string; timeoutMs?: number; confirmed?: boolean }) => {
+    (
+      event,
+      args: string[],
+      opts?: { serial?: string; timeoutMs?: number; confirmed?: boolean }
+    ) => {
       // Tehlikeli komutlarda kullanıcı onayı şart (148).
       const danger = classifyCommand(args)
       if (danger.dangerous && !opts?.confirmed) {

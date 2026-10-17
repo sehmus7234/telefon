@@ -8,6 +8,7 @@ import { startDevicePolling, stopDevicePolling, refreshDevices } from './poller'
 import { startUsbWatcher } from './usbWatcher'
 import { initDb, closeDb, getSetting } from './db'
 import { initSecretStore } from './services/security'
+import * as adb from './services/adb'
 import {
   initErrorLog,
   logError,
@@ -122,6 +123,9 @@ if (!gotTheLock) {
     const debugEnabled = getSetting('debug.enabled') === '1'
     setDebug(debugEnabled)
     setDebugMode(debugEnabled)
+
+    // Kullanıcının özel ADB yolu (Ayarlar) açılışta main sürece yüklenir.
+    adb.setConfiguredAdbPath(getSetting('adbYolu'))
 
     registerIpcHandlers()
     createSplashWindow()

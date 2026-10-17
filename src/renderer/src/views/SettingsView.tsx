@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAdbStore } from '../store/useAdbStore'
 import SecuritySettings from '../components/SecuritySettings'
 import ErrorDiagnostics from '../components/ErrorDiagnostics'
 import type { ThemeMode } from '@shared/types'
@@ -17,8 +18,11 @@ export default function SettingsView() {
   const mod = useThemeStore((s) => s.mod)
   const setMod = useThemeStore((s) => s.setMod)
   const [dil, setDil] = useState(() => load('telefon:ayar:dil', 'tr'))
-  const [adbYolu, setAdbYolu] = useState(() => load('telefon:ayar:adbYolu', ''))
-  const [otoGuncelle, setOtoGuncelle] = useState(() => load('telefon:ayar:otoGuncelle', 'true') === 'true')
+  const [adbYolu, setAdbYolu] = useState('')
+  const [otoGuncelle, setOtoGuncelle] = useState(
+    () => load('telefon:ayar:otoGuncelle', 'true') === 'true'
+  )
+  const adbYoluYuklendi = useRef(false)
 
   useEffect(() => {
     try {
@@ -27,12 +31,27 @@ export default function SettingsView() {
       /* yoksay */
     }
   }, [dil])
+
+  // ADB yolu: değeri main süreçten oku, değişince (debounce ile) main sürece yaz
+  // ve ADB durumunu tazele. localStorage artık kullanılmaz; yetkili kaynak DB'dir.
   useEffect(() => {
-    try {
-      localStorage.setItem('telefon:ayar:adbYolu', adbYolu)
-    } catch {
-      /* yoksay */
+    let iptal = false
+    void window.api.getAdbPath().then((p) => {
+      if (iptal) return
+      setAdbYolu(p ?? '')
+      adbYoluYuklendi.current = true
+    })
+    return () => {
+      iptal = true
     }
+  }, [])
+
+  useEffect(() => {
+    if (!adbYoluYuklendi.current) return
+    const t = setTimeout(() => {
+      void window.api.setAdbPath(adbYolu).then(() => useAdbStore.getState().durumYukle())
+    }, 400)
+    return () => clearTimeout(t)
   }, [adbYolu])
   useEffect(() => {
     try {
@@ -77,7 +96,8 @@ export default function SettingsView() {
           className={selectCls}
         />
         <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-          Boş bırakılırsa otomatik algılanır (src/main/services/adb/paths.ts).
+          Boş bırakılırsa otomatik algılanır. Tam dosya yolu ya da klasör yazabilirsiniz; değişiklik
+          ADB durumunu otomatik yeniler.
         </p>
       </div>
 

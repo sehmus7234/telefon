@@ -43,11 +43,12 @@ const api = {
   listUnauthorized: (): Promise<string[]> => ipcRenderer.invoke('devices:unauthorized'),
   startScrcpy: (serial: string): Promise<{ ok: boolean; message: string }> =>
     ipcRenderer.invoke('device:scrcpy', serial),
-  selectDirectory: (): Promise<string | null> =>
-    ipcRenderer.invoke('dialog:select-directory'),
+  selectDirectory: (): Promise<string | null> => ipcRenderer.invoke('dialog:select-directory'),
 
   // ADB
   getAdbStatus: (): Promise<AdbStatusInfo> => ipcRenderer.invoke('adb:status'),
+  getAdbPath: (): Promise<string | null> => ipcRenderer.invoke('adb:get-path'),
+  setAdbPath: (path: string): Promise<AdbStatusInfo> => ipcRenderer.invoke('adb:set-path', path),
   getAdbVersion: (): Promise<string> => ipcRenderer.invoke('adb:version'),
   startServer: (): Promise<string> => ipcRenderer.invoke('adb:server:start'),
   stopServer: (): Promise<string> => ipcRenderer.invoke('adb:server:stop'),
@@ -146,10 +147,8 @@ const api = {
     ipcRenderer.invoke('errors:list', limit),
   logError: (level: string, source: string, message: string, stack?: string): Promise<void> =>
     ipcRenderer.invoke('errors:log', level, source, message, stack),
-  exportErrorReport: (): Promise<ErrorReportResult> =>
-    ipcRenderer.invoke('errors:export-report'),
-  sendErrorReport: (): Promise<ErrorReportDelivery> =>
-    ipcRenderer.invoke('errors:send-report'),
+  exportErrorReport: (): Promise<ErrorReportResult> => ipcRenderer.invoke('errors:export-report'),
+  sendErrorReport: (): Promise<ErrorReportDelivery> => ipcRenderer.invoke('errors:send-report'),
   getSetting: (key: string): Promise<string | null> => ipcRenderer.invoke('settings:get', key),
   setSetting: (key: string, value: string): Promise<boolean> =>
     ipcRenderer.invoke('settings:set', key, value),
@@ -165,14 +164,11 @@ const api = {
     subscribe('devices:changed', cb),
   onDeviceConnected: (cb: (device: Device) => void): (() => void) =>
     subscribe('device:connected', cb),
-  onDeviceRemoved: (cb: (device: Device) => void): (() => void) =>
-    subscribe('device:removed', cb),
+  onDeviceRemoved: (cb: (device: Device) => void): (() => void) => subscribe('device:removed', cb),
   onDeviceInfo: (cb: (payload: { serial: string; info: DeviceInfo }) => void): (() => void) =>
     subscribe('device:info', cb),
-  onDevicesError: (cb: (message: string) => void): (() => void) =>
-    subscribe('devices:error', cb),
-  onAdbResult: (cb: (result: AdbRunResult) => void): (() => void) =>
-    subscribe('adb:result', cb),
+  onDevicesError: (cb: (message: string) => void): (() => void) => subscribe('devices:error', cb),
+  onAdbResult: (cb: (result: AdbRunResult) => void): (() => void) => subscribe('adb:result', cb),
   onBackupProgress: (cb: (p: BackupProgress & { runId: string }) => void): (() => void) =>
     subscribe('backup:progress', cb),
   onBackupResult: (
