@@ -57,7 +57,7 @@ git push --tags
 
 ## Dikkat
 
-- `PATRON` / `KULLANICI` yer tutucularını gerçek hesap adıyla değiştirmeden push
-  etmeyin; aksi halde otomatik güncelleme 404 verir.
+- Kullanıcı adı `patron` olarak ayarlandı; GitHub hesabınız farklıysa
+  `bash scripts/publish.sh KULLANICI` ile değiştirin (veya `git remote set-url`).
 - Sırlar (token, sertifika) repoya girmemelidir; CI'da secret olarak tanımlanır
   (bkz. `docs/CODE_SIGNING.md`).

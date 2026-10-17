@@ -527,5 +527,6 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
 - **Teknik dokümantasyon (178):** `docs/TEKNIK_DOKUMAN.md`.
 - **Demo senaryosu (179):** `docs/DEMO_SENARYO.md` (7 sahne, süreli).
 - **Açık kaynak yayın (180):** `LICENSE` (MIT), `CONTRIBUTING.md`, `docs/PUBLISHING.md`
-  yayın rehberi. Yayın için `PATRON` yer tutucularını gerçek GitHub hesabıyla
-  değiştirip `git push` + `v0.1.0` etiketi yeterli.
+  yayın rehberi. Kullanıcı adı `patron` olarak ayarlandı; farklıysa
+  `scripts/publish.sh KULLANICI` ile değiştirin. Kalan adım: `git push` + `v0.1.0`
+  etiketi (kimlik doğrulamalı terminalde).

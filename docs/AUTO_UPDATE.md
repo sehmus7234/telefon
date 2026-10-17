@@ -16,7 +16,7 @@
 ```yaml
 publish:
   provider: github
-  owner: PATRON # <-- GitHub kullanıcı/org adınızla değiştirin
+  owner: patron # zaten ayarlandı; GitHub hesabınız farklıysa değiştirin
   repo: telefon
 ```
 

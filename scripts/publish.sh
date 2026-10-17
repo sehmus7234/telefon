@@ -50,6 +50,7 @@ cat <<EOF
 
 == Sıradaki adımlar (kimlik doğrulamalı terminalde) ==
   gh auth login                # veya push sırasında kullanıcı adı+token
+  git branch -M main           # dal adını GitHub varsayılanıyla hizala
   git push -u origin main
   git tag v0.1.0
   git push --tags
