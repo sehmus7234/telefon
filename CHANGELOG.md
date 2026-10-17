@@ -3,6 +3,17 @@
 Bu dosyadaki tüm önemli değişiklikler [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/)
 biçiminde ve [SemVer](https://semver.org/lang/tr/) kurallarına göre kaydedilir.
 
+## [0.1.2] - 2026-10-17
+
+### Eklenenler
+
+- "Telefon IMEI" sayfası: bağlı cihazın IMEI'sini gösterir (kopyala/yenile) + elle girilen
+  IMEI'nin biçim ve Luhn checksum doğrulaması (`utils/imei.ts`).
+- "Root" sayfası: cihazın root durumunu okur (su yolu, Magisk sürümü) ve `adb root`/`adb unroot`
+  denemesi yapar; kalıcı root YÜKLEME yapılmaz (Magisk rehberi gösterilir).
+- IMEI okuma genişletildi: `dumpsys iphonesubinfo` boşsa tüm `getprop` çıktısı "imei"
+  anahtarları için taranır (imei1/imei2 + vendor anahtarları).
+
 ## [Yayınlanmadı]
 
 ### Eklenenler
