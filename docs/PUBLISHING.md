@@ -15,6 +15,16 @@ yayını tamamlar.
 
 ## Yayın Adımları (elle, tek sefer)
 
+**Tek komutla hazırlık:** `scripts/publish.sh` yer tutucuları değiştirir, remote'u
+ekler ve push/tag komutlarını yazdırır:
+
+```bash
+bash scripts/publish.sh KULLANICI          # veya: GITHUB_USER=KULLANICI bash scripts/publish.sh
+```
+
+Ardından komut dosyasının yazdırdığı `git push` + `git tag` adımlarını çalıştırın.
+Manuel yol (aşağıda) aynı işi adım adım anlatır.
+
 1. GitHub'da `telefon` adıyla boş bir repo oluşturun (private/public).
 2. `electron-builder.yml` içinde `publish.owner` alanını kullanıcı/org adınızla
    değiştirin; `package.json` içindeki `homepage` ve `repository.url` alanlarını
