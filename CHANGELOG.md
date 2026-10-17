@@ -3,6 +3,12 @@
 Bu dosyadaki tüm önemli değişiklikler [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/)
 biçiminde ve [SemVer](https://semver.org/lang/tr/) kurallarına göre kaydedilir.
 
+## [0.1.3] - 2026-10-17
+
+### Eklenenler
+
+- Windows taşınabilir (portable) ZIP paketi: kurulum gerektirmeden çıkar-çalıştır.
+
 ## [0.1.2] - 2026-10-17
 
 ### Eklenenler
