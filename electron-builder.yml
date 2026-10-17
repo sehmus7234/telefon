@@ -47,3 +47,4 @@ publish:
   provider: github
   owner: sehmus7234
   repo: telefon
+  releaseType: release
