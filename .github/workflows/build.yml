@@ -35,6 +35,9 @@ jobs:
           # electron-builder kendi Electron dağıtımını indirir; postinstall ikilisini atla.
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
+      - name: Native modülleri Electron için derle (better-sqlite3)
+        run: npm run rebuild:native
+
       - name: Tip kontrolü
         run: npm run typecheck
 
