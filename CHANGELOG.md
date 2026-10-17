@@ -3,6 +3,13 @@
 Bu dosyadaki tüm önemli değişiklikler [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/)
 biçiminde ve [SemVer](https://semver.org/lang/tr/) kurallarına göre kaydedilir.
 
+## [0.1.4] - 2026-10-17
+
+### Eklenenler
+
+- Çift SIM desteği: IMEI okuma artık IMEI1 + IMEI2'yi birlikte döndürür; IMEI sayfasında
+  her ikisi ayrı ayrı gösterilir (Luhn doğrulaması + kopyalama ile).
+
 ## [0.1.3] - 2026-10-17
 
 ### Eklenenler

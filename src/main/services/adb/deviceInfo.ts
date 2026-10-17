@@ -131,33 +131,34 @@ function parsePackages(raw: string): string[] {
     .map((l) => l.slice('package:'.length))
 }
 
-// 15 haneli IMEI'yi bulur.
-function parseImei(raw: string): string | null {
-  const m = raw.match(/\b(\d{15})\b/)
-  return m ? m[1] : null
+// Bir metindeki tüm 15 haneli IMEI değerlerini bulur (tekrarsız, sırayla).
+function parseImeis(raw: string): string[] {
+  const found = new Set<string>()
+  for (const m of raw.matchAll(/\b\d{15}\b/g)) found.add(m[0])
+  return [...found]
+}
+
+// getprop çıktısında "imei" içeren anahtarlardaki 15 haneli değerleri bulur (imei1/imei2 dahil).
+export function parseImeisFromProps(raw: string): string[] {
+  const found = new Set<string>()
+  for (const line of raw.split('\n')) {
+    if (!/imei/i.test(line)) continue
+    for (const imei of parseImeis(line)) found.add(imei)
+  }
+  return [...found]
 }
 
 // IMEI (prompt 56) — YALNIZCA OKUMA. Android 10+ root'suz cihazlarda genelde boş döner.
-// Önce `dumpsys iphonesubinfo` denenir; boşsa tüm getprop çıktısı IMEI anahtarları için taranır.
-async function readImei(serial: string): Promise<string | null> {
-  const out = await shell(serial, ['dumpsys', 'iphonesubinfo'])
-  const fromDumpsys = parseImei(out)
-  if (fromDumpsys) return fromDumpsys
-
-  // Bazı cihazlar (özellikle çift SIM / vendor ROM'ları) IMEI'yi getprop ile sunar:
-  // gsm.imei, persist.radio.imei1/2, ro.ril.oem.imei, ro.boot.imei vb. Tek komutla tüm
-  // özellikleri çekip "imei" içeren anahtarlarda 15 haneli değer ararız (imei1/imei2 dahil).
-  return parseImeiFromProps(await shell(serial, ['getprop']))
-}
-
-// getprop çıktısında "imei" içeren anahtarların ilk 15 haneli değerini bulur.
-export function parseImeiFromProps(raw: string): string | null {
-  for (const line of raw.split('\n')) {
-    if (!/imei/i.test(line)) continue
-    const val = parseImei(line)
-    if (val) return val
+// `dumpsys iphonesubinfo` + tüm getprop çıktısı taranır; çift SIM'de IMEI1/IMEI2 birlikte döner.
+async function readImeis(serial: string): Promise<string[]> {
+  const found = new Set<string>()
+  for (const imei of parseImeis(await shell(serial, ['dumpsys', 'iphonesubinfo']))) {
+    found.add(imei)
   }
-  return null
+  for (const imei of parseImeisFromProps(await shell(serial, ['getprop']))) {
+    found.add(imei)
+  }
+  return [...found]
 }
 
 // Paket listeleri: sistem + üçüncü parti (prompt 65/66/67)
@@ -181,7 +182,7 @@ export async function getDeviceInfo(serial: string): Promise<DeviceInfo> {
     osVersion, // 53
     apiLevelRaw, // 54
     serialNo, // 55
-    imei, // 56
+    imeis, // 56
     batteryRaw, // 57
     wmSize, // 59
     wmDensity, // 60
@@ -197,7 +198,7 @@ export async function getDeviceInfo(serial: string): Promise<DeviceInfo> {
     prop(serial, 'ro.build.version.release'),
     prop(serial, 'ro.build.version.sdk'),
     prop(serial, 'ro.serialno'),
-    readImei(serial),
+    readImeis(serial),
     shell(serial, ['dumpsys', 'battery']),
     shell(serial, ['wm', 'size']),
     shell(serial, ['wm', 'density']),
@@ -225,7 +226,8 @@ export async function getDeviceInfo(serial: string): Promise<DeviceInfo> {
     osVersion: osVersion || 'Bilinmiyor',
     apiLevel: apiLevelRaw ? Number(apiLevelRaw) : null,
     serialNo: serialNo || null,
-    imei,
+    imei: imeis[0] ?? null,
+    imeis,
     battery: parseBattery(batteryRaw),
     screen: parseScreen(wmSize, wmDensity),
     cpu: parseCpu(cpuRaw),

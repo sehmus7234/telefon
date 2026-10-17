@@ -14,8 +14,9 @@ declare global {
   }
 }
 
-// Luhn ile doğrulanmış geçerli bir test IMEI'si.
+// Luhn ile doğrulanmış geçerli test IMEI'leri.
 const GECERLI_IMEI = '490154203237518'
+const IMEI2 = '356938035643809'
 
 function cihaz(overrides: Partial<Device> = {}): Device {
   return {
@@ -30,7 +31,7 @@ function cihaz(overrides: Partial<Device> = {}): Device {
   }
 }
 
-function bilgi(imei: string | null): DeviceInfo {
+function bilgi(imeis: string[]): DeviceInfo {
   return {
     device: cihaz(),
     model: 'Pixel 7',
@@ -38,7 +39,8 @@ function bilgi(imei: string | null): DeviceInfo {
     osVersion: '14',
     apiLevel: 34,
     serialNo: 'ABC123',
-    imei,
+    imei: imeis[0] ?? null,
+    imeis,
     battery: null,
     screen: null,
     cpu: null,
@@ -64,17 +66,29 @@ describe('ImeiView', () => {
   test("bağlı cihazın IMEI'sini gösterir ve doğrular", () => {
     useDeviceStore.setState({
       cihazlar: [cihaz()],
-      bilgiler: { ABC123: bilgi(GECERLI_IMEI) }
+      bilgiler: { ABC123: bilgi([GECERLI_IMEI]) }
     })
     render(<ImeiView />)
     expect(screen.getByText(GECERLI_IMEI)).toBeTruthy()
     expect(screen.getByText('Geçerli (Luhn)')).toBeTruthy()
   })
 
+  test('çift SIM cihazda IMEI1 ve IMEI2 gösterir', () => {
+    useDeviceStore.setState({
+      cihazlar: [cihaz()],
+      bilgiler: { ABC123: bilgi([GECERLI_IMEI, IMEI2]) }
+    })
+    render(<ImeiView />)
+    expect(screen.getByText(GECERLI_IMEI)).toBeTruthy()
+    expect(screen.getByText(IMEI2)).toBeTruthy()
+    expect(screen.getByText('IMEI 1')).toBeTruthy()
+    expect(screen.getByText('IMEI 2')).toBeTruthy()
+  })
+
   test('checksum hatalı IMEI uyarı rozeti gösterir', () => {
     useDeviceStore.setState({
       cihazlar: [cihaz()],
-      bilgiler: { ABC123: bilgi('860123456789012') }
+      bilgiler: { ABC123: bilgi(['860123456789012']) }
     })
     render(<ImeiView />)
     expect(screen.getByText('Checksum geçersiz')).toBeTruthy()
@@ -83,14 +97,14 @@ describe('ImeiView', () => {
   test('IMEI yoksa bilgilendirme gösterir', () => {
     useDeviceStore.setState({
       cihazlar: [cihaz()],
-      bilgiler: { ABC123: bilgi(null) }
+      bilgiler: { ABC123: bilgi([]) }
     })
     render(<ImeiView />)
     expect(screen.getByText('IMEI alınamadı')).toBeTruthy()
   })
 
   test('bilgi yoksa otomatik çeker', async () => {
-    const getDeviceInfo = jest.fn().mockResolvedValue(bilgi(GECERLI_IMEI))
+    const getDeviceInfo = jest.fn().mockResolvedValue(bilgi([GECERLI_IMEI]))
     window.api = { getDeviceInfo } as unknown as Api
     useDeviceStore.setState({ cihazlar: [cihaz()], bilgiler: {} })
     render(<ImeiView />)

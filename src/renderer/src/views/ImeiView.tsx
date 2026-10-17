@@ -11,8 +11,8 @@ function serialOf(d: Device): string {
   return d.serialNumber ?? d.id
 }
 
-// Telefon IMEI sayfası: bağlı cihazların IMEI'sini yalnızca okuma modunda gösterir
-// ve elle girilen bir IMEI'nin biçim + Luhn checksum doğrulamasını yapar.
+// Telefon IMEI sayfası: bağlı cihazların IMEI'lerini yalnızca okuma modunda gösterir
+// (çift SIM'de IMEI1 + IMEI2) ve elle girilen bir IMEI'nin biçim + Luhn doğrulamasını yapar.
 export default function ImeiView() {
   const cihazlar = useDeviceStore((s) => s.cihazlar)
   const bilgiler = useDeviceStore((s) => s.bilgiler)
@@ -68,7 +68,7 @@ export default function ImeiView() {
           {bagli.map((d) => {
             const serial = serialOf(d)
             const info: DeviceInfo | undefined = bilgiler[serial]
-            const imei = info?.imei
+            const imeis = info?.imeis?.length ? info.imeis : info?.imei ? [info.imei] : []
             const yukleniyorMu = yukleniyor[serial] === true
             return (
               <div key={d.id} className="card p-4">
@@ -86,27 +86,36 @@ export default function ImeiView() {
                   </div>
                   {yukleniyorMu ? (
                     <div className="mt-1 text-sm text-gray-400">Okunuyor…</div>
-                  ) : imei ? (
-                    <div className="mt-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-lg tracking-wider">{imei}</span>
-                        <button
-                          onClick={() => void kopyala(imei)}
-                          className="btn-ghost shrink-0 text-xs"
-                          aria-label="IMEI kopyala"
-                        >
-                          Kopyala
-                        </button>
-                      </div>
-                      <div
-                        className={`mt-1 text-xs ${
-                          isValidImei(imei)
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-amber-600 dark:text-amber-400'
-                        }`}
-                      >
-                        {isValidImei(imei) ? 'Geçerli (Luhn)' : 'Checksum geçersiz'}
-                      </div>
+                  ) : imeis.length > 0 ? (
+                    <div className="mt-1 space-y-3">
+                      {imeis.map((imei, i) => (
+                        <div key={imei}>
+                          {imeis.length > 1 && (
+                            <div className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                              IMEI {i + 1}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-lg tracking-wider">{imei}</span>
+                            <button
+                              onClick={() => void kopyala(imei)}
+                              className="btn-ghost shrink-0 text-xs"
+                              aria-label={`IMEI ${i + 1} kopyala`}
+                            >
+                              Kopyala
+                            </button>
+                          </div>
+                          <div
+                            className={`text-xs ${
+                              isValidImei(imei)
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-amber-600 dark:text-amber-400'
+                            }`}
+                          >
+                            {isValidImei(imei) ? 'Geçerli (Luhn)' : 'Checksum geçersiz'}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">

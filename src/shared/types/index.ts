@@ -69,6 +69,7 @@ export interface DeviceInfo {
   apiLevel: number | null
   serialNo: string | null
   imei: string | null
+  imeis: string[]
   battery: BatteryInfo | null
   screen: ScreenInfo | null
   cpu: CpuInfo | null

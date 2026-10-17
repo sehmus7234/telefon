@@ -33,7 +33,7 @@ function bilgiSatirlari(info?: DeviceInfo): BilgiSatiri[] {
     { id: 'android', ozellik: 'Android sürümü', deger: info.osVersion },
     { id: 'api', ozellik: 'API seviyesi', deger: info.apiLevel ? String(info.apiLevel) : '—' },
     { id: 'seri', ozellik: 'Seri no', deger: info.serialNo ?? '—' },
-    { id: 'imei', ozellik: 'IMEI', deger: info.imei ?? '—' },
+    { id: 'imei', ozellik: 'IMEI', deger: info.imeis.length > 0 ? info.imeis.join(', ') : '—' },
     {
       id: 'pil',
       ozellik: 'Pil',
@@ -85,7 +85,11 @@ interface PaketSatiri {
 function UygulamalarTab({ info }: { info?: DeviceInfo }) {
   const rows: PaketSatiri[] = [
     ...(info?.packages?.system ?? []).map((p) => ({ id: `s-${p}`, tur: 'Sistem', paket: p })),
-    ...(info?.packages?.thirdParty ?? []).map((p) => ({ id: `t-${p}`, tur: 'Üçüncü parti', paket: p }))
+    ...(info?.packages?.thirdParty ?? []).map((p) => ({
+      id: `t-${p}`,
+      tur: 'Üçüncü parti',
+      paket: p
+    }))
   ]
   if (rows.length === 0)
     return <EmptyState title="Uygulama listesi yok" description="Cihaz bilgisi henüz çekilmedi." />
@@ -118,7 +122,10 @@ export default function DeviceDetailView() {
     push(r.message, r.ok ? 'success' : 'warning')
   }
 
-  if (!device) return <EmptyState title="Cihaz bulunamadı" description="Cihazlar sayfasından bir cihaz seçin." />
+  if (!device)
+    return (
+      <EmptyState title="Cihaz bulunamadı" description="Cihazlar sayfasından bir cihaz seçin." />
+    )
 
   return (
     <div className="space-y-4">
@@ -131,7 +138,16 @@ export default function DeviceDetailView() {
           </span>
         )}
         <button onClick={() => void scrcpyBaslat()} className="btn-ghost ml-auto">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="2" y="4" width="20" height="14" rx="2" />
             <path d="M8 22h8" />
             <path d="M12 18v4" />
