@@ -23,7 +23,9 @@ import type {
   PerformanceMetrics,
   MemoryStatus,
   ErrorReportResult,
-  ErrorReportDelivery
+  ErrorReportDelivery,
+  RootStatus,
+  AdbRootResult
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -40,6 +42,9 @@ const api = {
   refreshDevices: (): Promise<Device[]> => ipcRenderer.invoke('devices:refresh'),
   getDeviceInfo: (serial: string): Promise<DeviceInfo> =>
     ipcRenderer.invoke('devices:info', serial),
+  getRootStatus: (serial: string): Promise<RootStatus> => ipcRenderer.invoke('root:status', serial),
+  adbRoot: (serial: string): Promise<AdbRootResult> => ipcRenderer.invoke('root:adb', serial),
+  adbUnroot: (serial: string): Promise<AdbRootResult> => ipcRenderer.invoke('root:unroot', serial),
   listUnauthorized: (): Promise<string[]> => ipcRenderer.invoke('devices:unauthorized'),
   startScrcpy: (serial: string): Promise<{ ok: boolean; message: string }> =>
     ipcRenderer.invoke('device:scrcpy', serial),

@@ -16,6 +16,7 @@ import DashboardView from './views/DashboardView'
 import DevicesView from './views/DevicesView'
 import DeviceDetailView from './views/DeviceDetailView'
 import ImeiView from './views/ImeiView'
+import RootView from './views/RootView'
 import BackupView from './views/BackupView'
 import TestsView from './views/TestsView'
 import FilesView from './views/FilesView'
@@ -47,6 +48,7 @@ export default function App() {
     devices: <DevicesView />,
     'device-detail': <DeviceDetailView />,
     imei: <ImeiView />,
+    root: <RootView />,
     backup: <BackupView />,
     tests: <TestsView />,
     files: <FilesView />,

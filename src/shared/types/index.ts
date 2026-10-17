@@ -81,12 +81,20 @@ export interface DeviceInfo {
   firmwareVersion?: string
 }
 
-export type BackupStatus =
-  | 'pending'
-  | 'in_progress'
-  | 'completed'
-  | 'failed'
-  | 'cancelled'
+// --- Root durumu (yalnızca algılama; root YÜKLEME yapılmaz) ---
+
+export interface RootStatus {
+  isRooted: boolean
+  suPath: string | null
+  magiskVersion: string | null
+}
+
+export interface AdbRootResult {
+  ok: boolean
+  output: string
+}
+
+export type BackupStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled'
 
 export interface BackupFile {
   id: string
@@ -149,14 +157,7 @@ export interface BackupHistoryItem {
 
 export type TestStatus = 'pass' | 'fail' | 'error'
 
-export type FileKind =
-  | 'folder'
-  | 'image'
-  | 'video'
-  | 'audio'
-  | 'document'
-  | 'archive'
-  | 'other'
+export type FileKind = 'folder' | 'image' | 'video' | 'audio' | 'document' | 'archive' | 'other'
 
 export interface FileEntry {
   name: string

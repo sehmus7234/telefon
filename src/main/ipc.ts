@@ -86,6 +86,11 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('device:scrcpy', (_e, serial: string) => startScrcpy(serial))
   ipcMain.handle('devices:unauthorized', (): Promise<string[]> => adb.listUnauthorized())
 
+  // Root durumu (yalnızca okuma) + adb root/unroot denemesi.
+  ipcMain.handle('root:status', (_e, serial: string) => adb.getRootStatus(serial))
+  ipcMain.handle('root:adb', (_e, serial: string) => adb.adbRoot(serial))
+  ipcMain.handle('root:unroot', (_e, serial: string) => adb.adbUnroot(serial))
+
   // Kablosuz (prompt 31)
   ipcMain.handle('adb:wireless:enable', (_e, serial: string, port: number) =>
     adb.enableWireless(serial, port)

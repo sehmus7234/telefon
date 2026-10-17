@@ -7,6 +7,7 @@ const basliklar: Record<PageId, string> = {
   devices: 'Cihazlar',
   'device-detail': 'Cihaz Detayı',
   imei: 'Telefon IMEI',
+  root: 'Root',
   backup: 'Yedekleme',
   tests: 'Testler',
   files: 'Dosyalar',

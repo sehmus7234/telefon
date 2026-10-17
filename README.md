@@ -272,8 +272,8 @@ ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root
 
 - **Layout (71):** `components/layout/Sidebar` (sol menü) + `Header` (üst) + orta içerik.
   Sayfa yönlendirmesi `useNavStore` ile (react-router gerekmez).
-- **Menü (72):** Dashboard, Cihazlar, Telefon IMEI, Yedekleme, Testler, Dosyalar, Ayarlar
-  (SVG ikonlu).
+- **Menü (72):** Dashboard, Cihazlar, Telefon IMEI, Root, Yedekleme, Testler, Dosyalar,
+  Ayarlar (SVG ikonlu).
 - **Palet (73):** Tailwind'de `brand` (mavi-mor) skalası; koyu tema ağırlıklı — yüzey
   `surface` (#171923), arka plan #0f1117, accent gradyan brand->violet.
 - **Cihaz kartı (74/75):** `devices/DeviceCard` — ad, model, durum rozeti, pil ikonu;
@@ -285,6 +285,9 @@ ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root
   gösterir (Kopyala + Yenile); cihaz bağlanınca veya uygulama açılışında bilgi otomatik
   çekilir. Okunan IMEI'nin ve elle girilen IMEI'nin biçim + Luhn checksum doğrulaması
   yapılır (`utils/imei.ts`).
+- **Root sayfası:** `views/RootView` — cihazın root durumunu okur (su yolu, Magisk sürümü) ve
+  `adb root`/`adb unroot` denemesi yapar (yalnızca userdebug/eng build'lerde çalışır).
+  Kalıcı root YÜKLEME yapılmaz; Magisk ile manuel root rehberi gösterilir.
 - **UI bileşenleri (`components/ui/`):** Skeleton (79), EmptyState (80), Toast 4 tip (81),
   Modal (82), ProgressBar (83), DataTable sıralama+filtre (84), SearchBar (85), Tooltip (86).
 - **Responsive (87):** Sidebar 900px altında otomatik daralır (ikon modu).
@@ -473,8 +476,8 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
   `tsconfig.test.json` (`module: commonjs`) kullanılır. Varsayılan ortam `jsdom`
   (renderer bileşenleri); main/services testleri `@jest-environment node` ile çalışır.
 - **Test dosyaları:** `tests/unit/` (adb parse/exec, hata çevirisi, maskeleme, tehlikeli
-  komut, format, imei/Luhn, device-info/getprop IMEI) ve `tests/components/` (ProgressBar,
-  EmptyState, DeviceStatusBadge, DataTable, ImeiView). Toplam 79 test.
+  komut, format, imei/Luhn, device-info/getprop IMEI, root) ve `tests/components/` (ProgressBar,
+  EmptyState, DeviceStatusBadge, DataTable, ImeiView, RootView). Toplam 86 test.
 - **ADB mock'ları (162):** `tests/fixtures/fake-adb.sh` sahte adb ikilisidir;
   `ADB_PATH` ile yönlendirilip gerçek cihaz/adb olmadan `exec.ts` headless doğrulanır
   (version/devices/shell/timeout/hata kodu).
