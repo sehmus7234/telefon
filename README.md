@@ -254,9 +254,9 @@ Yedekler `userData/backups/<cihaz>-<zaman>/` altına yazılır.
 bilgilerini tek bir JSON objesinde toplar (prompt 70):
 
 - model (51), üretici (52), Android sürümü (53), API seviyesi (54), seri no (55)
-- IMEI (56) — `dumpsys iphonesubinfo`, yalnızca okuma; boşsa `gsm.imei`,
-  `persist.radio.imei` gibi getprop anahtarları denenir; Android 10+ root'suz cihazlarda
-  genelde boş döner
+- IMEI (56) — `dumpsys iphonesubinfo`, yalnızca okuma; boşsa tüm `getprop` çıktısı
+  "imei" anahtarları (gsm.imei, persist.radio.imei1/2, ro.ril.oem.imei vb.) için taranır;
+  Android 10+ root'suz cihazlarda genelde boş döner
 - pil: seviye (57), sağlık + sıcaklık (58) — arayüzde gösterilir
 - ekran çözünürlüğü (59) + DPI (60)
 - CPU (61), RAM (62), depolama (63) — `/proc/cpuinfo`, `/proc/meminfo`, `df /data`
@@ -473,8 +473,8 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
   `tsconfig.test.json` (`module: commonjs`) kullanılır. Varsayılan ortam `jsdom`
   (renderer bileşenleri); main/services testleri `@jest-environment node` ile çalışır.
 - **Test dosyaları:** `tests/unit/` (adb parse/exec, hata çevirisi, maskeleme, tehlikeli
-  komut, format, imei/Luhn) ve `tests/components/` (ProgressBar, EmptyState,
-  DeviceStatusBadge, DataTable, ImeiView). Toplam 75 test.
+  komut, format, imei/Luhn, device-info/getprop IMEI) ve `tests/components/` (ProgressBar,
+  EmptyState, DeviceStatusBadge, DataTable, ImeiView). Toplam 79 test.
 - **ADB mock'ları (162):** `tests/fixtures/fake-adb.sh` sahte adb ikilisidir;
   `ADB_PATH` ile yönlendirilip gerçek cihaz/adb olmadan `exec.ts` headless doğrulanır
   (version/devices/shell/timeout/hata kodu).

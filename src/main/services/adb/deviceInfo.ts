@@ -137,23 +137,24 @@ function parseImei(raw: string): string | null {
   return m ? m[1] : null
 }
 
-// IMEI (prompt 56) — YALNIZCA OKUMA. Android 10+ cihazlarda genelde boş döner.
-// Önce `dumpsys iphonesubinfo` denenir; boşsa yaygın getprop anahtarları kontrol edilir.
+// IMEI (prompt 56) — YALNIZCA OKUMA. Android 10+ root'suz cihazlarda genelde boş döner.
+// Önce `dumpsys iphonesubinfo` denenir; boşsa tüm getprop çıktısı IMEI anahtarları için taranır.
 async function readImei(serial: string): Promise<string | null> {
   const out = await shell(serial, ['dumpsys', 'iphonesubinfo'])
   const fromDumpsys = parseImei(out)
   if (fromDumpsys) return fromDumpsys
 
-  // Bazı cihazlar IMEI'yi özellik (getprop) olarak sunar (çift SIM için imei1/imei2).
-  const imeiProps = [
-    'gsm.imei',
-    'persist.radio.imei',
-    'persist.radio.imei1',
-    'ril.imei',
-    'ro.ril.oem.imei'
-  ]
-  for (const key of imeiProps) {
-    const val = parseImei(await prop(serial, key))
+  // Bazı cihazlar (özellikle çift SIM / vendor ROM'ları) IMEI'yi getprop ile sunar:
+  // gsm.imei, persist.radio.imei1/2, ro.ril.oem.imei, ro.boot.imei vb. Tek komutla tüm
+  // özellikleri çekip "imei" içeren anahtarlarda 15 haneli değer ararız (imei1/imei2 dahil).
+  return parseImeiFromProps(await shell(serial, ['getprop']))
+}
+
+// getprop çıktısında "imei" içeren anahtarların ilk 15 haneli değerini bulur.
+export function parseImeiFromProps(raw: string): string | null {
+  for (const line of raw.split('\n')) {
+    if (!/imei/i.test(line)) continue
+    const val = parseImei(line)
     if (val) return val
   }
   return null
