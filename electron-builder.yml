@@ -21,10 +21,20 @@ files:
 npmRebuild: false
 win:
   executableName: telefon
+  icon: build/icon.ico
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   createDesktopShortcut: always
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  category: public.app-category.utilities
+  target:
+    - dmg
+    - zip
+dmg:
+  artifactName: ${name}-${version}.${ext}
 linux:
   target:
     - AppImage
@@ -35,5 +45,5 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 publish:
   provider: github
-  owner: PATRON # TODO: GitHub kullanıcı adınla değiştir (otomatik güncelleme için şart)
+  owner: PATRON # <-- GitHub kullanıcı/org adınızla değiştirin (docs/AUTO_UPDATE.md)
   repo: telefon

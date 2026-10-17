@@ -1,0 +1,143 @@
+{
+  "slide_size": "16:9",
+  "slides": [
+    {
+      "layout": "title",
+      "title": "Telefon",
+      "subtitle": "Android Cihaz Yönetimi ve Yedekleme — Electron + React + TypeScript",
+      "background": "0F172A",
+      "notes": "Açılış: proje adı ve kısa tanım. Koyu lacivert zemin uygulama temasıyla uyumlu."
+    },
+    {
+      "layout": "title_content",
+      "title": "Gündem",
+      "bullets": [
+        "Proje tanımı ve amaç",
+        "Teknoloji yığını",
+        "Mimari (üç süreç modeli)",
+        "Öne çıkan özellikler",
+        "Güvenlik modeli",
+        "Test ve kod kalitesi",
+        "Paketleme ve dağıtım",
+        "Sonuç ve gelecek"
+      ],
+      "background": "0F172A",
+      "notes": "Konuşma planı. Her başlık bir sonraki slayta karşılık gelir."
+    },
+    {
+      "layout": "title_content",
+      "title": "Proje Tanımı",
+      "bullets": [
+        "Android cihazları masaüstünden yönetmek için açık kaynak uygulama",
+        "USB (ADB) ile bağlanan cihazları otomatik algılar",
+        "Donanım bilgisi: model, pil, ekran, CPU/RAM, depolama, root durumu",
+        "Yedekleme: fotoğraf, kişi, SMS ve uygulama verileri",
+        "Dosya tarayıcı: listele, aktar, sil, önizleme",
+        "12 donanım testi + PDF rapor",
+        "scrcpy ile ekran yansıtma"
+      ],
+      "background": "0F172A",
+      "notes": "Projenin ne yaptığını tek slaytta özetler."
+    },
+    {
+      "layout": "title_content",
+      "title": "Teknoloji Yığını",
+      "tables": [
+        {
+          "left": 1.2,
+          "top": 1.7,
+          "width": 11.0,
+          "height": 4.6,
+          "rows": [
+            ["Katman", "Teknoloji"],
+            ["Masaüstü", "Electron 33 (main + preload + renderer)"],
+            ["Arayüz", "React 18 + TypeScript + TailwindCSS"],
+            ["Durum", "Zustand"],
+            ["Derleme", "electron-vite (esbuild + Vite)"],
+            ["Veritabanı", "better-sqlite3 (WAL)"],
+            ["Test", "Jest + ts-jest + RTL + Playwright"],
+            ["Kalite", "ESLint 9 + Prettier + Husky"]
+          ]
+        }
+      ],
+      "background": "0F172A",
+      "notes": "Teknoloji seçimleri tablo halinde."
+    },
+    {
+      "layout": "title_content",
+      "title": "Mimari: Üç Süreç Modeli",
+      "bullets": [
+        "Main (src/main) — Node yetkisi: ADB servisleri, SQLite, yedekleme, güvenlik",
+        "Preload (src/preload) — contextBridge ile güvenli köprü",
+        "Renderer (src/renderer) — React arayüzü (nodeIntegration kapalı)",
+        "IPC: ipcMain.handle ile istek/yanıt; uzun işler runId + progress",
+        "Ortak tipler: @shared/types hem main hem renderer'da tutarlı"
+      ],
+      "background": "0F172A",
+      "notes": "Electron'un standart güvenli mimarisi."
+    },
+    {
+      "layout": "title_content",
+      "title": "Öne Çıkan Özellikler",
+      "bullets": [
+        "Cihaz algılama: adb devices polling + diff (bağlan/ayrıl bildirimi)",
+        "ADB servis katmanı: binary bulma, timeout, abort, komut kuyruğu",
+        "Yedekleme motoru: aşamalı, zip, ilerleme, iptal, restore",
+        "Dosya tarayıcı: thumbnail, sürükle-bırak, çoklu seçim",
+        "Cihaz testleri: ekran/dokunmatik/ses/kamera/pil + PDF rapor",
+        "Hata yönetimi: Türkçe hata çevirisi, retry, çökme raporu"
+      ],
+      "background": "0F172A",
+      "notes": "Kullanıcıya değer katan başlıca işlevler."
+    },
+    {
+      "layout": "title_content",
+      "title": "Güvenlik Modeli",
+      "bullets": [
+        "IPC whitelist + contextIsolation (renderer'a ham erişim yok)",
+        "Hassas veri maskeleme: IMEI, MAC, seri no, token, parola",
+        "Tehlikeli ADB komutları için kullanıcı onayı",
+        "AES-256-GCM şifreleme: hassas veri, yedek ve ayarlar",
+        "ADB RSA anahtar + parmak izi doğrulaması",
+        "Oturum kilidi ve güvenlik güncelleme kontrolü"
+      ],
+      "background": "0F172A",
+      "notes": "Cihaz erişimi olan bir uygulama için kritik katman."
+    },
+    {
+      "layout": "title_content",
+      "title": "Test ve Kod Kalitesi",
+      "bullets": [
+        "60 birim/bileşen testi (Jest + ts-jest, React Testing Library)",
+        "ADB servisleri sahte adb ikilisiyle headless test edilir",
+        "E2E: Playwright _electron ile uygulama açılış testi",
+        "TypeScript strict + ek bayraklar; typecheck kapısı",
+        "ESLint 9 + Prettier + Husky pre-commit (lint-staged)",
+        "GitHub Actions CI: her push'ta lint + typecheck + test + coverage"
+      ],
+      "background": "0F172A",
+      "notes": "Sürdürülebilirlik için test ve kalite altyapısı."
+    },
+    {
+      "layout": "title_content",
+      "title": "Paketleme ve Dağıtım",
+      "bullets": [
+        "Windows: .exe (NSIS kurulumcusu)",
+        "macOS: .dmg + .zip",
+        "Linux: .AppImage + .deb (doğrulandı)",
+        "Otomatik güncelleme: GitHub Releases üzerinden electron-updater",
+        "CI/CD: v* etiketi itilince üç platform kurulumcusu üretilir",
+        "Kod imzalama: Windows Authenticode, macOS notarizasyon"
+      ],
+      "background": "0F172A",
+      "notes": "Uçtan uca dağıtım hattı."
+    },
+    {
+      "layout": "section",
+      "title": "Sonuç",
+      "subtitle": "Açık kaynak (MIT) — Teşekkürler, sorular?",
+      "background": "0F172A",
+      "notes": "Kapanış: proje açık kaynak, katkıya açık."
+    }
+  ]
+}

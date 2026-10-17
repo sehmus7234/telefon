@@ -507,3 +507,25 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
 - **Kod inceleme listesi (170):** `docs/CODE_REVIEW_CHECKLIST.md` — işlevsellik, test,
   tip/derleme, lint, güvenlik, hata yönetimi, performans, dokümantasyon başlıklarında
   PR öncesi kontrol listesi.
+
+## Paketleme, Dağıtım ve Proje Çıktıları (prompt 171-180)
+
+- **Paketleme (171-172):** electron-builder ile Windows `.exe` (NSIS), macOS `.dmg`/`.zip`,
+  Linux `.AppImage`/`.deb`. Linux yerel olarak üretildi ve doğrulandı:
+  `release/telefon-0.1.0.AppImage` (126 MB) + `release/telefon_0.1.0_amd64.deb` (86 MB).
+  Windows/macOS kurulumcuları CI'da (`build.yml`) üretilir.
+- **İkon + installer (173):** `build/icon.png` (512×512) + `build/icon.ico` (çok boyutlu);
+  NSIS "assisted" kurulum (dizin seçimi + masaüstü kısayolu). Ayrıntı: `docs/RELEASE.md`.
+- **Versiyonlama (174):** SemVer; `version` alanı tek doğruluk kaynağı, `CHANGELOG.md`
+  "Keep a Changelog" biçiminde, `v*` etiketi yayın tetikler.
+- **Otomatik güncelleme (175):** `electron-updater` + GitHub Releases (veya generic HTTP).
+  Paketleme `latest-linux.yml` + `app-update.yml` üretiyor. Ayrıntı: `docs/AUTO_UPDATE.md`.
+- **Kod imzalama (176):** Windows Authenticode, macOS notarizasyon, Linux GPG —
+  `docs/CODE_SIGNING.md`.
+- **Sunum (177):** `sunum/Telefon-Sunum.pptx` (10 slayt, 16:9; `sunum/sunum.json`
+  ile yeniden üretilebilir).
+- **Teknik dokümantasyon (178):** `docs/TEKNIK_DOKUMAN.md`.
+- **Demo senaryosu (179):** `docs/DEMO_SENARYO.md` (7 sahne, süreli).
+- **Açık kaynak yayın (180):** `LICENSE` (MIT), `CONTRIBUTING.md`, `docs/PUBLISHING.md`
+  yayın rehberi. Yayın için `PATRON` yer tutucularını gerçek GitHub hesabıyla
+  değiştirip `git push` + `v0.1.0` etiketi yeterli.
