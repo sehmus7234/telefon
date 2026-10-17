@@ -1,13 +1,7 @@
 import { create } from 'zustand'
 
 export type PageId =
-  | 'dashboard'
-  | 'devices'
-  | 'device-detail'
-  | 'backup'
-  | 'tests'
-  | 'files'
-  | 'settings'
+  'dashboard' | 'devices' | 'device-detail' | 'imei' | 'backup' | 'tests' | 'files' | 'settings'
 
 interface NavState {
   page: PageId

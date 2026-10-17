@@ -15,6 +15,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import DashboardView from './views/DashboardView'
 import DevicesView from './views/DevicesView'
 import DeviceDetailView from './views/DeviceDetailView'
+import ImeiView from './views/ImeiView'
 import BackupView from './views/BackupView'
 import TestsView from './views/TestsView'
 import FilesView from './views/FilesView'
@@ -45,6 +46,7 @@ export default function App() {
     dashboard: <DashboardView />,
     devices: <DevicesView />,
     'device-detail': <DeviceDetailView />,
+    imei: <ImeiView />,
     backup: <BackupView />,
     tests: <TestsView />,
     files: <FilesView />,

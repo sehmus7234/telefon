@@ -138,9 +138,25 @@ function parseImei(raw: string): string | null {
 }
 
 // IMEI (prompt 56) — YALNIZCA OKUMA. Android 10+ cihazlarda genelde boş döner.
+// Önce `dumpsys iphonesubinfo` denenir; boşsa yaygın getprop anahtarları kontrol edilir.
 async function readImei(serial: string): Promise<string | null> {
   const out = await shell(serial, ['dumpsys', 'iphonesubinfo'])
-  return parseImei(out)
+  const fromDumpsys = parseImei(out)
+  if (fromDumpsys) return fromDumpsys
+
+  // Bazı cihazlar IMEI'yi özellik (getprop) olarak sunar (çift SIM için imei1/imei2).
+  const imeiProps = [
+    'gsm.imei',
+    'persist.radio.imei',
+    'persist.radio.imei1',
+    'ril.imei',
+    'ro.ril.oem.imei'
+  ]
+  for (const key of imeiProps) {
+    const val = parseImei(await prop(serial, key))
+    if (val) return val
+  }
+  return null
 }
 
 // Paket listeleri: sistem + üçüncü parti (prompt 65/66/67)
