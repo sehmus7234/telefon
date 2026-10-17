@@ -8,6 +8,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# GITHUB_TOKEN'ın GitHub Releases oluşturabilmesi için contents yazma izni gerekir.
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
