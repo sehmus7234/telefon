@@ -6,7 +6,7 @@ import { adbExec } from './exec'
 
 // Cihaz yolu -> güvenli dosya adı (/sdcard -> sdcard)
 function sanitizePath(p: string): string {
-  return p.replace(/^\//, '').replace(/[\/\\]/g, '_')
+  return p.replace(/^\//, '').replace(/[/\\]/g, '_')
 }
 
 // Yedeklenen dosyaların toplam boyutunu ve sha256 manifestini hesaplar.

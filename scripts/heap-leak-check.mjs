@@ -50,7 +50,9 @@ if (!target || !target.webSocketDebuggerUrl) {
   process.exit(1)
 }
 console.log(`Hedef: ${target.title || target.type} (${target.type})`)
-console.log(`Örnek sayısı: ${samples} · aralık beklemesi: ${delayMs} ms · min aralık: ${minIntervals}`)
+console.log(
+  `Örnek sayısı: ${samples} · aralık beklemesi: ${delayMs} ms · min aralık: ${minIntervals}`
+)
 
 // 2) CDP bağlantısı.
 const ws = new WebSocket(target.webSocketDebuggerUrl)
@@ -71,7 +73,8 @@ ws.onmessage = (ev) => {
   if (msg.id && pending.has(msg.id)) {
     const { resolve, reject } = pending.get(msg.id)
     pending.delete(msg.id)
-    msg.error ? reject(new Error(msg.error.message)) : resolve(msg.result)
+    if (msg.error) reject(new Error(msg.error.message))
+    else resolve(msg.result)
   } else if (msg.method === 'HeapProfiler.addHeapSnapshotChunk') {
     chunks.push(msg.params.chunk)
   }
@@ -172,12 +175,12 @@ try {
     console.log('✓ Kalıcı büyüme tespit edilmedi.')
   } else {
     const table = rows.slice(0, top).map((r) => ({
-      'Sınıf': r.name.length > 50 ? r.name.slice(0, 47) + '…' : r.name,
-      'Δtoplam': r.total,
-      'aralık': `${r.growing}/${r.intervals}`,
-      'Δboyut': fmtBytes(r.totalSize),
-      'detay': r.deltas.map((d) => (d >= 0 ? `+${d}` : `${d}`)).join(' '),
-      'şimdi': r.finalCount
+      Sınıf: r.name.length > 50 ? r.name.slice(0, 47) + '…' : r.name,
+      Δtoplam: r.total,
+      aralık: `${r.growing}/${r.intervals}`,
+      Δboyut: fmtBytes(r.totalSize),
+      detay: r.deltas.map((d) => (d >= 0 ? `+${d}` : `${d}`)).join(' '),
+      şimdi: r.finalCount
     }))
     console.table(table)
     console.log(

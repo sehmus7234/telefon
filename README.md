@@ -365,8 +365,8 @@ komutlar ilgili ekranı/uygulamayı açar; otomatik pass/fail komut çıktısın
   hash/doğrulama, SHA-256 özet. Yedek şifrelemede (145) ve ayar deposunda (147) kullanılır.
 - `adbKey.ts` — ADB RSA anahtar yönetimi (143) + parmak izi (141). Anahtar yoksa
   otomatik üretir (önce `adb keygen`, yoksa Node crypto fallback: PKCS#8 PEM özel anahtar
-  + PKCS#1 DER tabanlı `adbkey.pub`). `rotateAdbKey`/`deleteAdbKey` ile yönetim.
-  Parmak izi = `adbkey.pub` içindeki blob'un MD5'i (adb'nin ekranda gösterdiği) + SHA-256.
+  - PKCS#1 DER tabanlı `adbkey.pub`). `rotateAdbKey`/`deleteAdbKey` ile yönetim.
+    Parmak izi = `adbkey.pub` içindeki blob'un MD5'i (adb'nin ekranda gösterdiği) + SHA-256.
 - `secretStore.ts` — `userData/security/master.key` (rastgele 32B) ile AES-256-GCM
   şifreleme; DB'deki `secure_settings` tablosu bu katmanı kullanır (147).
 - `session.ts` — opsiyonel ana parola ile uygulama kilidi (146). Parola hash'i scrypt ile
@@ -456,3 +456,54 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
   `.github/workflows/build.yml` Windows/macOS/Linux kurulumcularını CI'da
   (yerel runner) üretir. `v*` etiketi itince GitHub Releases'a da yayınlar.
 - Kendi makinende Windows ise `npm run dist:win` doğrudan çalışır.
+
+## Test, Lint ve CI/CD (prompt 161-170)
+
+### Test Altyapısı (161-165)
+
+- **Jest + ts-jest** (`jest.config.js` + `tsconfig.test.json`): electron-vite'in ESNext
+  modülü Jest'in CommonJS çalışma zamanıyla çakıştığı için testlere özel
+  `tsconfig.test.json` (`module: commonjs`) kullanılır. Varsayılan ortam `jsdom`
+  (renderer bileşenleri); main/services testleri `@jest-environment node` ile çalışır.
+- **Test dosyaları:** `tests/unit/` (adb parse/exec, hata çevirisi, maskeleme, tehlikeli
+  komut, format) ve `tests/components/` (ProgressBar, EmptyState, DeviceStatusBadge,
+  DataTable). Toplam 60 test.
+- **ADB mock'ları (162):** `tests/fixtures/fake-adb.sh` sahte adb ikilisidir;
+  `ADB_PATH` ile yönlendirilip gerçek cihaz/adb olmadan `exec.ts` headless doğrulanır
+  (version/devices/shell/timeout/hata kodu).
+- **Komutlar:** `npm test` (tek sefer), `npm run test:watch`, `npm run test:coverage`.
+- **Coverage raporu (165):** `coverage/` altında text + HTML + lcov. Test edilen birimler
+  (parse, redact, adbError, dangerous, format, temel bileşenler) ~%90-100; kod tabanının
+  tamamı için global kapsam ~%18 (160 özelliklik projede testler kademeli ekleniyor).
+
+### E2E (164)
+
+- **Playwright + `_electron`** (`playwright.config.ts` + `e2e/app.spec.ts`): derlenmiş
+  uygulamayı (`out/main/index.js`) başlatır, ana pencerenin açıldığını doğrular.
+- Headless Linux'ta `xvfb-run -a npm run test:e2e`; root kapsayıcıda `--no-sandbox` şart.
+- **Bilinen engel:** better-sqlite3 v13 (N-API 10) Electron 33 (Node 20 / N-API 9) ile
+  uyumsuz; uygulama Electron altında `initDb`'de SIGSEGV verir. Çözüm: Electron >=35'e
+  yükseltmek veya better-sqlite3 <=11'e indirip `electron-rebuild` uygulamak.
+
+### CI/CD (166)
+
+- `.github/workflows/ci.yml` — her push/PR'da `typecheck` + `lint` + `test:coverage`
+  (unit/bileşen) çalıştırır; ayrı bir `e2e` job'ı Xvfb altında Playwright Electron
+  testini koşar (yukarıdaki bağımlılık uyumsuzluğu giderilene dek kırmızı kalır).
+- `.github/workflows/build.yml` — mevcut CD: `v*` etiketi veya manuel tetiklemede
+  Windows/macOS/Linux kurulumcularını üretir ve GitHub Releases'a yayınlar.
+
+### Kod Kalitesi (167-170)
+
+- **ESLint 9 (flat)** (`eslint.config.mjs`): typescript-eslint + react + react-hooks +
+  prettier uyumluluğu. `npm run lint` / `npm run lint:fix`.
+- **Prettier** (`.prettierrc.json`): noktalı virgülsüz, tek tırnak, 100 sütun.
+  `npm run format` / `npm run format:check`.
+- **Husky + lint-staged (168):** `.husky/pre-commit` staged dosyalarda ESLint + Prettier
+  uygular; `prepare` scripti ile kurulumda otomatik etkinleşir.
+- **TypeScript strict (169):** `strict: true` zaten aktifti; ek olarak
+  `noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch` eklendi
+  (ErrorBoundary'de `override` belirteçleri).
+- **Kod inceleme listesi (170):** `docs/CODE_REVIEW_CHECKLIST.md` — işlevsellik, test,
+  tip/derleme, lint, güvenlik, hata yönetimi, performans, dokümantasyon başlıklarında
+  PR öncesi kontrol listesi.

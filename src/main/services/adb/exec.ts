@@ -28,7 +28,7 @@ function runSpawn(args: string[], options: AdbExecOptions = {}): Promise<AdbExec
   if (!adbPath) {
     return Promise.reject(
       new Error(
-        'adb bulunamadı. Android SDK platform-tools kurun ve PATH\'e ekleyin ya da ADB_PATH tanımlayın.'
+        "adb bulunamadı. Android SDK platform-tools kurun ve PATH'e ekleyin ya da ADB_PATH tanımlayın."
       )
     )
   }
@@ -44,7 +44,10 @@ function runSpawn(args: string[], options: AdbExecOptions = {}): Promise<AdbExec
     let timedOut = false
     let aborted = false
     let settled = false
-    let timer: ReturnType<typeof setTimeout> | undefined
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGKILL')
+    }, timeoutMs)
     const signal = options.signal
 
     function cleanup(): void {
@@ -63,11 +66,6 @@ function runSpawn(args: string[], options: AdbExecOptions = {}): Promise<AdbExec
       aborted = true
       child.kill('SIGKILL')
     }
-
-    timer = setTimeout(() => {
-      timedOut = true
-      child.kill('SIGKILL')
-    }, timeoutMs)
 
     if (signal) {
       if (signal.aborted) onAbort()

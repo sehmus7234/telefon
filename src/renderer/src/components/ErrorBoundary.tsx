@@ -14,15 +14,20 @@ interface State {
 // Global hata sınırı (prompt 151): render hatalarını yakalar, kullanıcı dostu
 // bir geri dönüş ekranı gösterir ve hatayı main süreçteki hata loguna yazar.
 export default class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, message: '' }
+  override state: State = { hasError: false, message: '' }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, message: error.message, stack: error.stack }
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo): void {
+  override componentDidCatch(error: Error, info: ErrorInfo): void {
     // Hatayı kalıcı hata loguna yaz (154).
-    void window.api.logError('error', 'renderer', error.message, `${error.stack}\n${info.componentStack}`)
+    void window.api.logError(
+      'error',
+      'renderer',
+      error.message,
+      `${error.stack}\n${info.componentStack}`
+    )
   }
 
   private yenidenYukle = (): void => {
@@ -41,7 +46,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (!this.state.hasError) return this.props.children
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 p-6 dark:bg-[#0f1117]">

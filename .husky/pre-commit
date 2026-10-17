@@ -1,0 +1,2 @@
+# Pre-commit (prompt 168): staged dosyalarda ESLint + Prettier uygular (lint-staged).
+npx lint-staged

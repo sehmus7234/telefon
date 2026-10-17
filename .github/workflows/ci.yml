@@ -1,0 +1,62 @@
+name: CI
+
+# Sürekli entegrasyon (prompt 166): her push ve PR'da tip kontrolü + lint + test.
+# Paketleme/yayın ayrı olarak build.yml'de (CD) çalışır.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm install --no-audit --no-fund
+        env:
+          # Birim/bileşen testleri Electron ikilisini gerektirmez; indirmeyi atla.
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Tip kontrolü
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Birim + bileşen testleri (coverage)
+        run: npm run test:coverage
+
+  e2e:
+    # NOT: better-sqlite3 v13 (N-API 10) Electron 33 (Node 20/N-API 9) ile uyumsuz;
+    # bağımlılık düzeltilene kadar (Electron >=35 veya better-sqlite3 <=11) bu job kırmızı kalır.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Bağımlılıkları kur (Electron ikilisiyle)
+        run: npm install --no-audit --no-fund
+
+      - name: Electron sistem bağımlılıkları + Xvfb kur
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libnss3 libatk1.0-0 libatk-bridge2.0-0 \
+            libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
+            libxrandr2 libgbm1 libasound2 libgtk-3-0 libpango-1.0-0 libcairo2
+
+      - name: Derle
+        run: npm run build
+
+      - name: E2E testleri (Xvfb altında)
+        run: xvfb-run -a npm run test:e2e

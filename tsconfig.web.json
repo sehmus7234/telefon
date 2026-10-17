@@ -7,6 +7,9 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "strict": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -19,9 +22,5 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": [
-    "src/renderer/src/**/*",
-    "src/preload/index.d.ts",
-    "src/shared/**/*"
-  ]
+  "include": ["src/renderer/src/**/*", "src/preload/index.d.ts", "src/shared/**/*"]
 }
