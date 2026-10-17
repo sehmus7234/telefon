@@ -1,5 +1,6 @@
 // Telefon IMEI sayfası testleri.
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import ImeiView from '../../src/renderer/src/views/ImeiView'
 import { useDeviceStore } from '../../src/renderer/src/store/useDeviceStore'
 import type { Api } from '../../src/preload'
@@ -12,6 +13,9 @@ declare global {
     api: Api
   }
 }
+
+// Luhn ile doğrulanmış geçerli bir test IMEI'si.
+const GECERLI_IMEI = '490154203237518'
 
 function cihaz(overrides: Partial<Device> = {}): Device {
   return {
@@ -57,13 +61,23 @@ describe('ImeiView', () => {
     expect(screen.getByText('Telefon bağlı değil')).toBeTruthy()
   })
 
-  test("bağlı cihazın IMEI'sini gösterir", () => {
+  test("bağlı cihazın IMEI'sini gösterir ve doğrular", () => {
+    useDeviceStore.setState({
+      cihazlar: [cihaz()],
+      bilgiler: { ABC123: bilgi(GECERLI_IMEI) }
+    })
+    render(<ImeiView />)
+    expect(screen.getByText(GECERLI_IMEI)).toBeTruthy()
+    expect(screen.getByText('Geçerli (Luhn)')).toBeTruthy()
+  })
+
+  test('checksum hatalı IMEI uyarı rozeti gösterir', () => {
     useDeviceStore.setState({
       cihazlar: [cihaz()],
       bilgiler: { ABC123: bilgi('860123456789012') }
     })
     render(<ImeiView />)
-    expect(screen.getByText('860123456789012')).toBeTruthy()
+    expect(screen.getByText('Checksum geçersiz')).toBeTruthy()
   })
 
   test('IMEI yoksa bilgilendirme gösterir', () => {
@@ -76,11 +90,27 @@ describe('ImeiView', () => {
   })
 
   test('bilgi yoksa otomatik çeker', async () => {
-    const getDeviceInfo = jest.fn().mockResolvedValue(bilgi('860123456789012'))
+    const getDeviceInfo = jest.fn().mockResolvedValue(bilgi(GECERLI_IMEI))
     window.api = { getDeviceInfo } as unknown as Api
     useDeviceStore.setState({ cihazlar: [cihaz()], bilgiler: {} })
     render(<ImeiView />)
-    expect(await screen.findByText('860123456789012')).toBeTruthy()
+    expect(await screen.findByText(GECERLI_IMEI)).toBeTruthy()
     expect(getDeviceInfo).toHaveBeenCalledWith('ABC123')
+  })
+
+  test('elle girilen geçerli IMEI onay gösterir', async () => {
+    const user = userEvent.setup()
+    render(<ImeiView />)
+    const input = screen.getByPlaceholderText('Örn: 490154203237518')
+    await user.type(input, GECERLI_IMEI)
+    expect(screen.getByText('Geçerli IMEI')).toBeTruthy()
+  })
+
+  test('elle girilen geçersiz IMEI uyarı gösterir', async () => {
+    const user = userEvent.setup()
+    render(<ImeiView />)
+    const input = screen.getByPlaceholderText('Örn: 490154203237518')
+    await user.type(input, '12345')
+    expect(screen.getByText(/Geçersiz IMEI/)).toBeTruthy()
   })
 })

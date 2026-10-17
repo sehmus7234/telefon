@@ -282,7 +282,9 @@ ve cihaz kartında gösterilir (pil, ekran, CPU, RAM, depolama, seri, IMEI, root
 - **Cihaz detay (77/78):** `DeviceDetailView` sekmeli (Genel/Uygulamalar/Dosyalar/Testler);
   `AnimatePresence` + `layoutId` ile smooth sekme geçişi.
 - **Telefon IMEI sayfası:** `views/ImeiView` — bağlı cihazların IMEI'sini kart olarak
-  gösterir (Kopyala + Yenile); cihaz bağlanınca veya uygulama açılışında bilgi otomatik çekilir.
+  gösterir (Kopyala + Yenile); cihaz bağlanınca veya uygulama açılışında bilgi otomatik
+  çekilir. Okunan IMEI'nin ve elle girilen IMEI'nin biçim + Luhn checksum doğrulaması
+  yapılır (`utils/imei.ts`).
 - **UI bileşenleri (`components/ui/`):** Skeleton (79), EmptyState (80), Toast 4 tip (81),
   Modal (82), ProgressBar (83), DataTable sıralama+filtre (84), SearchBar (85), Tooltip (86).
 - **Responsive (87):** Sidebar 900px altında otomatik daralır (ikon modu).
@@ -471,8 +473,8 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
   `tsconfig.test.json` (`module: commonjs`) kullanılır. Varsayılan ortam `jsdom`
   (renderer bileşenleri); main/services testleri `@jest-environment node` ile çalışır.
 - **Test dosyaları:** `tests/unit/` (adb parse/exec, hata çevirisi, maskeleme, tehlikeli
-  komut, format) ve `tests/components/` (ProgressBar, EmptyState, DeviceStatusBadge,
-  DataTable, ImeiView). Toplam 64 test.
+  komut, format, imei/Luhn) ve `tests/components/` (ProgressBar, EmptyState,
+  DeviceStatusBadge, DataTable, ImeiView). Toplam 75 test.
 - **ADB mock'ları (162):** `tests/fixtures/fake-adb.sh` sahte adb ikilisidir;
   `ADB_PATH` ile yönlendirilip gerçek cihaz/adb olmadan `exec.ts` headless doğrulanır
   (version/devices/shell/timeout/hata kodu).
