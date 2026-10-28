@@ -27,6 +27,7 @@ import {
   getSetting
 } from './db'
 import { runTests, exportPdf } from './services/tests'
+import { getLicenseStatus, activateLicense } from './services/license'
 import { listFiles, pullFile, pushFile, deleteFile, createFolder } from './services/files'
 import * as security from './services/security'
 import { classifyCommand } from './services/security'
@@ -47,6 +48,10 @@ import {
 // contextBridge ile renderer'a açılır.
 export function registerIpcHandlers(): void {
   ipcMain.handle('app:get-version', () => app.getVersion())
+
+  // Lisans (serial) — çevrimdışı aktivasyon ve durum sorgusu.
+  ipcMain.handle('license:status', () => getLicenseStatus())
+  ipcMain.handle('license:activate', (_e, serial: string) => activateLicense(serial))
 
   // ADB durumu (prompt 17)
   ipcMain.handle('adb:status', () => adb.getAdbStatus())

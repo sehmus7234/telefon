@@ -12,3 +12,6 @@ playwright-report/
 
 # headless selfcheck derleme çıktısı
 scripts/.security.selfcheck.cjs
+
+# Lisans imza anahtarları (private asla commit edilmez; public koda gömülü)
+scripts/keys/

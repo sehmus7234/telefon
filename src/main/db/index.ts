@@ -64,8 +64,7 @@ export function listBackups(limit = 100): BackupHistoryItem[] {
 
 export function getBackupPath(id: number): string | null {
   const row = getDb().prepare('SELECT path FROM backups WHERE id = ?').get(id) as
-    | { path: string }
-    | undefined
+    { path: string } | undefined
   return row?.path ?? null
 }
 
@@ -127,8 +126,7 @@ export function setSetting(key: string, value: string): void {
 
 export function getSetting(key: string): string | null {
   const row = getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key) as
-    | { value: string }
-    | undefined
+    { value: string } | undefined
   return row?.value ?? null
 }
 
@@ -150,8 +148,7 @@ export function setSecureSetting(key: string, value: string): void {
 
 export function getSecureSetting(key: string): string | null {
   const row = getDb().prepare('SELECT value FROM secure_settings WHERE key = ?').get(key) as
-    | { value: string }
-    | undefined
+    { value: string } | undefined
   if (!row) return null
   return decryptSecret(row.value)
 }
@@ -164,4 +161,45 @@ export function listSecureSettingKeys(): string[] {
   return (getDb().prepare('SELECT key FROM secure_settings').all() as { key: string }[]).map(
     (r) => r.key
   )
+}
+
+// --- lisans (serial) kaydı ---
+
+export interface LicenseRecord {
+  serialHash: string
+  product: string
+  machineId: string
+  activatedAt: string
+  expiresAt: string
+  serialLast4: string
+}
+
+// Tek aktif lisans tutulur; yeni aktivasyon önceki kaydı değiştirir.
+export function saveLicense(rec: LicenseRecord): void {
+  const d = getDb()
+  d.prepare('DELETE FROM license').run()
+  d.prepare(
+    `INSERT INTO license (serial_hash, product, machine_id, activated_at, expires_at, serial_last4)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(rec.serialHash, rec.product, rec.machineId, rec.activatedAt, rec.expiresAt, rec.serialLast4)
+}
+
+export function getLicense(): LicenseRecord | null {
+  const row = getDb()
+    .prepare(
+      `SELECT serial_hash AS serialHash, product, machine_id AS machineId,
+              activated_at AS activatedAt, expires_at AS expiresAt, serial_last4 AS serialLast4
+       FROM license ORDER BY id DESC LIMIT 1`
+    )
+    .get() as
+    | {
+        serialHash: string
+        product: string
+        machineId: string
+        activatedAt: string
+        expiresAt: string
+        serialLast4: string
+      }
+    | undefined
+  return row ?? null
 }

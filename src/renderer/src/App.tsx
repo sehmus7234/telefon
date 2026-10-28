@@ -7,10 +7,12 @@ import { useNavStore, type PageId } from './store/useNavStore'
 import { useAdbStore } from './store/useAdbStore'
 import { useDeviceStore } from './store/useDeviceStore'
 import { useSessionStore } from './store/useSessionStore'
+import { useLicenseStore } from './store/useLicenseStore'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Toasts from './components/Toasts'
 import AppLock from './components/AppLock'
+import LicenseGate from './components/LicenseGate'
 import ErrorBoundary from './components/ErrorBoundary'
 import DashboardView from './views/DashboardView'
 import DevicesView from './views/DevicesView'
@@ -34,6 +36,9 @@ export default function App() {
   const adbHata = useAdbStore((s) => s.hata)
   const oturumKilitli = useSessionStore((s) => s.state.locked)
   const oturumYukle = useSessionStore((s) => s.yukle)
+  const lisansStatus = useLicenseStore((s) => s.status)
+  const lisansYuklendi = useLicenseStore((s) => s.yuklendi)
+  const lisansYukle = useLicenseStore((s) => s.yukle)
 
   useEffect(() => {
     void durumYukle()
@@ -41,7 +46,8 @@ export default function App() {
     void gecmisYukle()
     void useDeviceStore.getState().listele()
     void oturumYukle()
-  }, [durumYukle, surumYukle, gecmisYukle, oturumYukle])
+    void lisansYukle()
+  }, [durumYukle, surumYukle, gecmisYukle, oturumYukle, lisansYukle])
 
   const sayfalar: Record<PageId, ReactNode> = {
     dashboard: <DashboardView />,
@@ -53,6 +59,19 @@ export default function App() {
     tests: <TestsView />,
     files: <FilesView />,
     settings: <SettingsView />
+  }
+
+  // Lisans kontrolü her şeyden önce gelir: lisans aktif değilse uygulama açılmaz.
+  if (!lisansYuklendi) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-[#0f1117]">
+        <div className="text-sm text-gray-500 dark:text-gray-400">Yükleniyor…</div>
+      </div>
+    )
+  }
+
+  if (!lisansStatus || !lisansStatus.active) {
+    return <LicenseGate />
   }
 
   return (

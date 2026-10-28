@@ -307,3 +307,18 @@ export interface ErrorReportDelivery {
   summary: string
   error?: string
 }
+
+// --- Lisans (serial) tipleri ---
+
+export type LicenseReason = 'none' | 'valid' | 'expired' | 'machine-mismatch' | 'invalid'
+
+export interface LicenseStatus {
+  active: boolean
+  reason: LicenseReason
+  product: string | null
+  machineId: string | null
+  activatedAt: string | null
+  expiresAt: string | null
+  remainingDays: number
+  serialLast4: string | null
+}

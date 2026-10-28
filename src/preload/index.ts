@@ -25,7 +25,8 @@ import type {
   ErrorReportResult,
   ErrorReportDelivery,
   RootStatus,
-  AdbRootResult
+  AdbRootResult,
+  LicenseStatus
 } from '@shared/types'
 
 // Yalnızca izinli kanallar dinlenebilir; genel ipcRenderer.on renderer'a verilmez.
@@ -120,6 +121,11 @@ const api = {
   getThumbnail: (serial: string, remotePath: string): Promise<string | null> =>
     ipcRenderer.invoke('files:thumbnail', serial, remotePath),
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
+
+  // Lisans (serial) — çevrimdışı aktivasyon
+  getLicenseStatus: (): Promise<LicenseStatus> => ipcRenderer.invoke('license:status'),
+  activateLicense: (serial: string): Promise<LicenseStatus> =>
+    ipcRenderer.invoke('license:activate', serial),
 
   // Oturum yönetimi (146)
   getSessionState: (): Promise<SessionState> => ipcRenderer.invoke('security:session:state'),

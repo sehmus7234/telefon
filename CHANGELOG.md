@@ -3,6 +3,16 @@
 Bu dosyadaki tüm önemli değişiklikler [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/)
 biçiminde ve [SemVer](https://semver.org/lang/tr/) kurallarına göre kaydedilir.
 
+## [Yayınlanmadı]
+
+### Eklenenler
+
+- Lisans (serial) sistemi: çevrimdışı, Ed25519 imzalı 6 aylık (183 gün) serial. Süre ilk
+  aktivasyonda başlar ve makine kimliğine bağlanır; süre dolunca uygulama tamamen kilitlenir,
+  yeni serial girilmeden açılmaz. Aktivasyon ekranı (`LicenseGate`), Ayarlar'da lisans bilgisi
+  (kalan gün/bitiş), `scripts/generate-license.mjs` serial üretici, `license` DB tablosu
+  (migration v3), `tests/unit/license.test.ts`.
+
 ## [0.1.4] - 2026-10-17
 
 ### Eklenenler

@@ -68,6 +68,23 @@ export const migrations: Migration[] = [
         ALTER TABLE backups ADD COLUMN encrypted INTEGER DEFAULT 0;
       `)
     }
+  },
+  {
+    version: 3,
+    name: 'license-table',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS license (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          serial_hash TEXT NOT NULL,
+          product TEXT NOT NULL,
+          machine_id TEXT NOT NULL,
+          activated_at TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          serial_last4 TEXT NOT NULL
+        );
+      `)
+    }
   }
 ]
 
@@ -89,9 +106,11 @@ export function migrate(db: Database.Database): void {
     if (applied.has(m.version)) continue
     db.transaction(() => {
       m.up(db)
-      db
-        .prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)')
-        .run(m.version, m.name, new Date().toISOString())
+      db.prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)').run(
+        m.version,
+        m.name,
+        new Date().toISOString()
+      )
     })()
   }
 }

@@ -540,3 +540,30 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
   yayın rehberi. Kullanıcı adı `patron` olarak ayarlandı; farklıysa
   `scripts/publish.sh KULLANICI` ile değiştirin. Kalan adım: `git push` + `v0.1.0`
   etiketi (kimlik doğrulamalı terminalde).
+
+## Lisans (Serial) Sistemi
+
+Uygulama çevrimdışı, imzalı serial lisansı ile korunur:
+
+- **Süre:** 183 gün (6 ay), İLK AKTİVASYONDA başlar.
+- **Makine bağlama:** Lisans, ilk aktive edildiği makinenin donanım parmak izine bağlanır;
+  uygulama klasörü/DB başka makineye kopyalanırsa çalışmaz.
+- **Süre dolunca:** Uygulama tamamen kilitlenir; yeni serial girilmeden açılmaz.
+
+### Serial üretimi (yalnızca lisans sahibi)
+
+```bash
+node scripts/generate-license.mjs 3   # 3 adet serial üret
+```
+
+Serial'ler Ed25519 ile imzalanır. Doğrulama public anahtarı
+`src/main/services/license/publicKey.ts` içine gömülüdür; private anahtar
+`scripts/keys/private.pem` içindedir (git'e girmez, asla paylaşılmaz).
+
+- Private anahtar kaybolursa yeni serial üretilemez (mevcut serialler çalışmaya devam eder).
+- Yeni anahtar çifti üretmek (`node scripts/generate-keys.mjs`) eski serialleri geçersiz kılar;
+  üretilen public anahtarı `publicKey.ts` içine gömmen gerekir.
+
+Teknik detaylar: `src/main/services/license/` (doğrulama + makine kimliği),
+`src/main/db/migrations.ts` (v3: `license` tablosu), `LicenseGate.tsx` (aktivasyon ekranı),
+`tests/unit/license.test.ts` (doğrulama testleri).

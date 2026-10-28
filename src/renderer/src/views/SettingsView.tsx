@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAdbStore } from '../store/useAdbStore'
+import { useLicenseStore } from '../store/useLicenseStore'
 import SecuritySettings from '../components/SecuritySettings'
 import ErrorDiagnostics from '../components/ErrorDiagnostics'
 import type { ThemeMode } from '@shared/types'
@@ -13,10 +14,11 @@ function load(key: string, def: string): string {
   }
 }
 
-// Ayarlar sayfası (prompt 88): tema, dil, ADB yolu, otomatik güncelleme.
+// Ayarlar sayfası (prompt 88): tema, dil, ADB yolu, otomatik güncelleme, lisans.
 export default function SettingsView() {
   const mod = useThemeStore((s) => s.mod)
   const setMod = useThemeStore((s) => s.setMod)
+  const lisans = useLicenseStore((s) => s.status)
   const [dil, setDil] = useState(() => load('telefon:ayar:dil', 'tr'))
   const [adbYolu, setAdbYolu] = useState('')
   const [otoGuncelle, setOtoGuncelle] = useState(
@@ -99,6 +101,36 @@ export default function SettingsView() {
           Boş bırakılırsa otomatik algılanır. Tam dosya yolu ya da klasör yazabilirsiniz; değişiklik
           ADB durumunu otomatik yeniler.
         </p>
+      </div>
+
+      <div className="card p-5">
+        <div className="text-sm font-medium">Lisans</div>
+        {lisans?.active ? (
+          <div className="mt-2 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Durum</span>
+              <span className="font-medium text-green-600 dark:text-green-400">Aktif</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Kalan süre</span>
+              <span>{lisans.remainingDays} gün</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Bitiş tarihi</span>
+              <span>
+                {lisans.expiresAt ? new Date(lisans.expiresAt).toLocaleDateString('tr-TR') : '—'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Serial</span>
+              <span>•••• {lisans.serialLast4 ?? ''}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Aktif lisans bilgisi yok.
+          </div>
+        )}
       </div>
 
       <div className="card flex items-center justify-between p-5">
