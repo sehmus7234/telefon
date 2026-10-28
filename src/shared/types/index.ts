@@ -310,7 +310,8 @@ export interface ErrorReportDelivery {
 
 // --- Lisans (serial) tipleri ---
 
-export type LicenseReason = 'none' | 'valid' | 'expired' | 'machine-mismatch' | 'invalid'
+export type LicenseReason =
+  'none' | 'valid' | 'expired' | 'machine-mismatch' | 'clock-tampered' | 'invalid'
 
 export interface LicenseStatus {
   active: boolean

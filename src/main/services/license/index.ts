@@ -8,10 +8,16 @@
 // için ileride asimetrik (Ed25519) imzaya dönülebilir.
 //
 // Süre: 183 gün (6 ay), İLK AKTİVASYONDA başlar ve makine kimliğine bağlanır.
+// Ayrıca saat geri alma koruması: son görülen zaman DB'de tutulur; sistem saati
+// bu değerin belirgin şekilde gerisine alınırsa lisans şüpheli sayılır.
 import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import { LICENSE_SECRET } from './secret'
 import { getMachineId } from './machineId'
-import { getLicense as dbGetLicense, saveLicense as dbSaveLicense } from '../../db'
+import {
+  getLicense as dbGetLicense,
+  saveLicense as dbSaveLicense,
+  updateLicenseLastSeen
+} from '../../db'
 import type { LicenseStatus } from '@shared/types'
 
 export const LICENSE_VALIDITY_DAYS = 183 // 6 ay
@@ -23,6 +29,16 @@ const PAYLOAD_BYTES = 1 + NONCE_BYTES // 4
 const SERIAL_BYTES = PAYLOAD_BYTES + HMAC_BYTES // 20 bayt -> base32 32 karakter
 
 const DAY_MS = 24 * 60 * 60 * 1000
+
+// Saat geri alma toleransı: 1 gün. Küçük düzeltmeler (saat dilimi, NTP) sorun çıkarmaz;
+// lisans süresini uzatmak için yapılan günler/aylar ölçeğindeki geri alma yakalanır.
+export const CLOCK_TOLERANCE_MS = DAY_MS
+
+// Sistem saati geri alınmış mı? (saf fonksiyon, test edilebilir)
+export function isClockTampered(now: number, lastSeen: number | null): boolean {
+  if (lastSeen === null) return false
+  return now < lastSeen - CLOCK_TOLERANCE_MS
+}
 
 // Crockford Base32 (I, L, O, U hariç) — elle yazımda karışan karakterlerden kaçınır.
 const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
@@ -120,7 +136,7 @@ export function remainingDays(expiresAt: string): number {
   return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / DAY_MS))
 }
 
-// Mevcut lisans durumu (DB kaydı + makine kimliği ile karşılaştırma).
+// Mevcut lisans durumu (DB kaydı + makine kimliği + saat kontrolü).
 export function getLicenseStatus(): LicenseStatus {
   const rec = dbGetLicense()
   const machineId = getMachineId()
@@ -135,6 +151,27 @@ export function getLicenseStatus(): LicenseStatus {
     serialLast4: null
   }
   if (!rec) return empty
+
+  // Saat geri alma koruması: son görülen zamandan belirgin şekilde gerideysek şüpheli.
+  const now = Date.now()
+  const lastSeen = rec.lastSeenAt ? new Date(rec.lastSeenAt).getTime() : null
+  if (isClockTampered(now, lastSeen)) {
+    return {
+      active: false,
+      reason: 'clock-tampered',
+      product: rec.product,
+      machineId,
+      activatedAt: rec.activatedAt,
+      expiresAt: rec.expiresAt,
+      remainingDays: 0,
+      serialLast4: rec.serialLast4
+    }
+  }
+  // Saat normal: son görülen zamanı yalnızca ileri yönde tazele.
+  if (lastSeen === null || now > lastSeen) {
+    updateLicenseLastSeen(new Date(now).toISOString())
+  }
+
   if (rec.machineId !== machineId) {
     return {
       active: false,
@@ -193,7 +230,8 @@ export function activateLicense(serial: string): LicenseStatus {
     machineId,
     activatedAt: activatedAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
-    serialLast4: v.serialLast4
+    serialLast4: v.serialLast4,
+    lastSeenAt: activatedAt.toISOString()
   })
   return getLicenseStatus()
 }

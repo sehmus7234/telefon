@@ -172,6 +172,7 @@ export interface LicenseRecord {
   activatedAt: string
   expiresAt: string
   serialLast4: string
+  lastSeenAt: string | null
 }
 
 // Tek aktif lisans tutulur; yeni aktivasyon önceki kaydı değiştirir.
@@ -179,16 +180,25 @@ export function saveLicense(rec: LicenseRecord): void {
   const d = getDb()
   d.prepare('DELETE FROM license').run()
   d.prepare(
-    `INSERT INTO license (serial_hash, product, machine_id, activated_at, expires_at, serial_last4)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(rec.serialHash, rec.product, rec.machineId, rec.activatedAt, rec.expiresAt, rec.serialLast4)
+    `INSERT INTO license (serial_hash, product, machine_id, activated_at, expires_at, serial_last4, last_seen_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    rec.serialHash,
+    rec.product,
+    rec.machineId,
+    rec.activatedAt,
+    rec.expiresAt,
+    rec.serialLast4,
+    rec.lastSeenAt ?? rec.activatedAt
+  )
 }
 
 export function getLicense(): LicenseRecord | null {
   const row = getDb()
     .prepare(
       `SELECT serial_hash AS serialHash, product, machine_id AS machineId,
-              activated_at AS activatedAt, expires_at AS expiresAt, serial_last4 AS serialLast4
+              activated_at AS activatedAt, expires_at AS expiresAt, serial_last4 AS serialLast4,
+              last_seen_at AS lastSeenAt
        FROM license ORDER BY id DESC LIMIT 1`
     )
     .get() as
@@ -199,7 +209,13 @@ export function getLicense(): LicenseRecord | null {
         activatedAt: string
         expiresAt: string
         serialLast4: string
+        lastSeenAt: string | null
       }
     | undefined
   return row ?? null
+}
+
+// Son görülen zamanı tazele (saat geri alma tespiti için, yalnızca ileri yönde).
+export function updateLicenseLastSeen(iso: string): void {
+  getDb().prepare('UPDATE license SET last_seen_at = ?').run(iso)
 }

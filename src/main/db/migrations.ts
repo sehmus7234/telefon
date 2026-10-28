@@ -85,6 +85,13 @@ export const migrations: Migration[] = [
         );
       `)
     }
+  },
+  {
+    version: 4,
+    name: 'license-last-seen',
+    up: (db) => {
+      db.exec(`ALTER TABLE license ADD COLUMN last_seen_at TEXT;`)
+    }
   }
 ]
 

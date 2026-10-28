@@ -1,4 +1,4 @@
-// Lisans (serial) sistemi testleri: base32, HMAC imza doğrulama, süre hesapları.
+// Lisans (serial) sistemi testleri: base32, HMAC imza doğrulama, süre hesapları, saat koruması.
 import { createHmac, randomBytes } from 'crypto'
 import {
   base32Encode,
@@ -7,6 +7,8 @@ import {
   computeExpiry,
   remainingDays,
   groupSerial,
+  isClockTampered,
+  CLOCK_TOLERANCE_MS,
   LICENSE_VALIDITY_DAYS
 } from '../../src/main/services/license'
 
@@ -81,6 +83,32 @@ describe('süre hesapları', () => {
     expect(remainingDays(gelecek)).toBeLessThanOrEqual(10)
     const gecmis = new Date(Date.now() - 10 * 86400000).toISOString()
     expect(remainingDays(gecmis)).toBe(0)
+  })
+})
+
+describe('isClockTampered (saat geri alma koruması)', () => {
+  const DAY = 24 * 60 * 60 * 1000
+
+  test('tolerans 1 gündür', () => {
+    expect(CLOCK_TOLERANCE_MS).toBe(DAY)
+  })
+
+  test('saat normal ilerlediyse false', () => {
+    expect(isClockTampered(Date.now(), Date.now() - DAY)).toBe(false)
+  })
+
+  test('küçük geri alma (tolerans içi, 12 saat) false', () => {
+    const last = Date.now()
+    expect(isClockTampered(last - 12 * 60 * 60 * 1000, last)).toBe(false)
+  })
+
+  test('belirgin geri alma (2 gün) true', () => {
+    const last = Date.now()
+    expect(isClockTampered(last - 2 * DAY, last)).toBe(true)
+  })
+
+  test('lastSeen yoksa false', () => {
+    expect(isClockTampered(Date.now(), null)).toBe(false)
   })
 })
 
