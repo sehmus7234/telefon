@@ -1,21 +1,26 @@
-// Lisans (serial) sistemi: çevrimdışı, imzalı serial doğrulama.
+// Lisans (serial) sistemi: çevrimdışı, HMAC imzalı serial doğrulama.
 //
-// Serial formatı: base32(payload + Ed25519 imza).
-//   payload  = "<ürün>.<sürüm>.<nonce>"  (ör. telefon.v1.1a2b3c4d5e6f7a8b)
-//   imza     = 64 bayt Ed25519 (yalnızca lisans sahibinin private anahtarıyla)
-// Uygulama yalnızca gömülü public anahtarla imzayı DOĞRULAR; bu yüzden sahte
-// serial üretilemez (private anahtar uygulamada bulunmaz).
+// Serial formatı: base32( payload || HMAC-SHA256(payload)[:16] )
+//   payload = 4 bayt: [0] = ürün+sürüm kodu (0x11 = telefon v1), [1..3] = nonce
+//   imza    = 16 bayt (128 bit güvenlik)
+// İmza anahtarı uygulamaya gömülüdür (LICENSE_SECRET). Bu yüzden serial kısadır
+// (~32 karakter); anahtar tersine mühendislikle elde edilebilir, daha güçlü koruma
+// için ileride asimetrik (Ed25519) imzaya dönülebilir.
 //
 // Süre: 183 gün (6 ay), İLK AKTİVASYONDA başlar ve makine kimliğine bağlanır.
-import { createHash, verify } from 'crypto'
-import { LICENSE_PUBLIC_KEY } from './publicKey'
+import { createHash, createHmac, timingSafeEqual } from 'crypto'
+import { LICENSE_SECRET } from './secret'
 import { getMachineId } from './machineId'
 import { getLicense as dbGetLicense, saveLicense as dbSaveLicense } from '../../db'
 import type { LicenseStatus } from '@shared/types'
 
 export const LICENSE_VALIDITY_DAYS = 183 // 6 ay
 export const LICENSE_PRODUCT = 'telefon'
-export const LICENSE_VERSION = 'v1'
+export const LICENSE_PRODUCT_BYTE = 0x11 // ürün+sürüm: telefon v1
+const HMAC_BYTES = 16 // 128 bit güvenlik
+const NONCE_BYTES = 3
+const PAYLOAD_BYTES = 1 + NONCE_BYTES // 4
+const SERIAL_BYTES = PAYLOAD_BYTES + HMAC_BYTES // 20 bayt -> base32 32 karakter
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -76,35 +81,33 @@ export interface SerialVerifyResult {
   reason: string
 }
 
-// Serial'i doğrular: biçim, imza, ürün ve sürüm. Saf fonksiyon (test edilebilir).
-export function verifySerial(
-  serial: string,
-  publicKey: string = LICENSE_PUBLIC_KEY
-): SerialVerifyResult {
+// Serial'i doğrular: uzunluk, HMAC imza ve ürün kodu. Saf fonksiyon (test edilebilir).
+export function verifySerial(serial: string, secret: string = LICENSE_SECRET): SerialVerifyResult {
   const clean = serial.replace(/[^0-9A-Za-z]/g, '').toUpperCase()
   const last4 = clean.slice(-4) || ''
+  const fail = (reason: string): SerialVerifyResult => ({
+    ok: false,
+    product: null,
+    serialLast4: last4,
+    reason
+  })
   try {
     const buf = base32Decode(clean)
-    if (buf.length < 1 + 64) {
-      return { ok: false, product: null, serialLast4: last4, reason: 'çok kısa' }
+    if (buf.length !== SERIAL_BYTES) {
+      return fail('uzunluk hatalı')
     }
-    const payloadLen = buf[0]
-    if (payloadLen <= 0 || 1 + payloadLen + 64 !== buf.length) {
-      return { ok: false, product: null, serialLast4: last4, reason: 'biçim hatalı' }
+    const payload = buf.subarray(0, PAYLOAD_BYTES)
+    const mac = buf.subarray(PAYLOAD_BYTES)
+    const expected = createHmac('sha256', secret).update(payload).digest().subarray(0, HMAC_BYTES)
+    if (!timingSafeEqual(mac, expected)) {
+      return fail('imza geçersiz')
     }
-    const payload = buf.subarray(1, 1 + payloadLen).toString('utf8')
-    const sig = buf.subarray(1 + payloadLen)
-    const valid = verify(null, Buffer.from(payload), publicKey, sig)
-    if (!valid) {
-      return { ok: false, product: null, serialLast4: last4, reason: 'imza geçersiz' }
+    if (payload[0] !== LICENSE_PRODUCT_BYTE) {
+      return fail('ürün uyuşmuyor')
     }
-    const parts = payload.split('.')
-    if (parts.length !== 3 || parts[0] !== LICENSE_PRODUCT || parts[1] !== LICENSE_VERSION) {
-      return { ok: false, product: null, serialLast4: last4, reason: 'ürün/sürüm uyuşmuyor' }
-    }
-    return { ok: true, product: parts[0], serialLast4: last4, reason: '' }
+    return { ok: true, product: LICENSE_PRODUCT, serialLast4: last4, reason: '' }
   } catch {
-    return { ok: false, product: null, serialLast4: last4, reason: 'çözümlenemedi' }
+    return fail('çözümlenemedi')
   }
 }
 

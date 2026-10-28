@@ -1,5 +1,5 @@
-// Lisans (serial) sistemi testleri: base32, imza doğrulama, süre hesapları.
-import { generateKeyPairSync, sign } from 'crypto'
+// Lisans (serial) sistemi testleri: base32, HMAC imza doğrulama, süre hesapları.
+import { createHmac, randomBytes } from 'crypto'
 import {
   base32Encode,
   base32Decode,
@@ -10,17 +10,13 @@ import {
   LICENSE_VALIDITY_DAYS
 } from '../../src/main/services/license'
 
-// Test için bağımsız anahtar çifti (uygulamanın gömülü anahtarına bağımlı değil).
-const { publicKey, privateKey } = generateKeyPairSync('ed25519')
-const pubPem = publicKey.export({ type: 'spki', format: 'pem' }).toString()
+const TEST_SECRET = 'test-lisans-secret-1234567890abcdef'
+const PRODUCT_BYTE = 0x11
 
-function makeSerial(
-  payload = `telefon.v1.${'a'.repeat(16)}`,
-  key: { export: () => void } & object = privateKey
-): string {
-  const sig = sign(null, Buffer.from(payload), key as never)
-  const body = Buffer.concat([Buffer.from([Buffer.byteLength(payload)]), Buffer.from(payload), sig])
-  return groupSerial(base32Encode(body))
+function makeSerial(secret = TEST_SECRET, productByte = PRODUCT_BYTE): string {
+  const payload = Buffer.concat([Buffer.from([productByte]), randomBytes(3)])
+  const mac = createHmac('sha256', secret).update(payload).digest().subarray(0, 16)
+  return groupSerial(base32Encode(Buffer.concat([payload, mac])))
 }
 
 describe('base32', () => {
@@ -38,33 +34,36 @@ describe('base32', () => {
 
 describe('verifySerial', () => {
   test('geçerli serial kabul edilir', () => {
-    const r = verifySerial(makeSerial(), pubPem)
+    const r = verifySerial(makeSerial(), TEST_SECRET)
     expect(r.ok).toBe(true)
     expect(r.product).toBe('telefon')
     expect(r.serialLast4).toHaveLength(4)
   })
 
+  test('serial 32 karakterdir (kısa format)', () => {
+    expect(makeSerial().replace(/-/g, '')).toHaveLength(32)
+  })
+
   test('boş/rastgele değer reddedilir', () => {
-    expect(verifySerial('AAAA-BBBB-CCCC-DDDD', pubPem).ok).toBe(false)
-    expect(verifySerial('', pubPem).ok).toBe(false)
-    expect(verifySerial('not a valid serial at all', pubPem).ok).toBe(false)
+    expect(verifySerial('AAAA-BBBB-CCCC-DDDD', TEST_SECRET).ok).toBe(false)
+    expect(verifySerial('', TEST_SECRET).ok).toBe(false)
+    expect(verifySerial('not a valid serial', TEST_SECRET).ok).toBe(false)
   })
 
   test('yanlış anahtarla imzalanmış serial reddedilir', () => {
-    const other = generateKeyPairSync('ed25519')
-    const forged = makeSerial(undefined, other.privateKey as never)
-    expect(verifySerial(forged, pubPem).ok).toBe(false)
+    const forged = makeSerial('baska-secret-000000000000000000000')
+    expect(verifySerial(forged, TEST_SECRET).ok).toBe(false)
   })
 
   test('imzası bozulmuş serial reddedilir', () => {
     const s = makeSerial()
     const bozuk = s.slice(0, -4) + 'ZZZZ' // son karakterler değişir -> imza geçersiz
-    expect(verifySerial(bozuk, pubPem).ok).toBe(false)
+    expect(verifySerial(bozuk, TEST_SECRET).ok).toBe(false)
   })
 
-  test('ürün adı farklıysa reddedilir', () => {
-    const forged = makeSerial(`baska.v1.${'a'.repeat(16)}`)
-    expect(verifySerial(forged, pubPem).ok).toBe(false)
+  test('ürün kodu farklıysa reddedilir', () => {
+    const forged = makeSerial(TEST_SECRET, 0x99)
+    expect(verifySerial(forged, TEST_SECRET).ok).toBe(false)
   })
 })
 

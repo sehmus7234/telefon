@@ -556,13 +556,13 @@ Uygulama çevrimdışı, imzalı serial lisansı ile korunur:
 node scripts/generate-license.mjs 3   # 3 adet serial üret
 ```
 
-Serial'ler Ed25519 ile imzalanır. Doğrulama public anahtarı
-`src/main/services/license/publicKey.ts` içine gömülüdür; private anahtar
-`scripts/keys/private.pem` içindedir (git'e girmez, asla paylaşılmaz).
+Serial'ler HMAC-SHA256 ile imzalanır (kısa, ~32 karakter). İmza anahtarı
+`src/main/services/license/secret.ts` içine gömülüdür; aynı anahtar
+`scripts/keys/secret.key` içindedir (git'e girmez, asla paylaşılmaz).
 
-- Private anahtar kaybolursa yeni serial üretilemez (mevcut serialler çalışmaya devam eder).
-- Yeni anahtar çifti üretmek (`node scripts/generate-keys.mjs`) eski serialleri geçersiz kılar;
-  üretilen public anahtarı `publicKey.ts` içine gömmen gerekir.
+- Anahtar kaybolursa yeni serial üretilemez (mevcut serialler çalışmaya devam eder).
+- Yeni anahtar üretmek (`node scripts/generate-keys.mjs`) eski serialleri geçersiz kılar;
+  üretilen değeri `secret.ts` içine gömmen gerekir.
 
 Teknik detaylar: `src/main/services/license/` (doğrulama + makine kimliği),
 `src/main/db/migrations.ts` (v3: `license` tablosu), `LicenseGate.tsx` (aktivasyon ekranı),
