@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAdbStore } from '../store/useAdbStore'
 import { useLicenseStore } from '../store/useLicenseStore'
+import { kalanSureyiFormatla } from '../utils/format'
 import SecuritySettings from '../components/SecuritySettings'
 import ErrorDiagnostics from '../components/ErrorDiagnostics'
 import type { ThemeMode } from '@shared/types'
@@ -24,6 +25,7 @@ export default function SettingsView() {
   const [otoGuncelle, setOtoGuncelle] = useState(
     () => load('telefon:ayar:otoGuncelle', 'true') === 'true'
   )
+  const [simdi, setSimdi] = useState(() => Date.now())
   const adbYoluYuklendi = useRef(false)
 
   useEffect(() => {
@@ -63,8 +65,18 @@ export default function SettingsView() {
     }
   }, [otoGuncelle])
 
+  // Lisans geri sayımı: lisans aktifken her saniye güncelle (ay/gün/saat/dakika/saniye).
+  useEffect(() => {
+    if (!lisans?.active) return
+    const t = setInterval(() => setSimdi(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [lisans?.active])
+
   const selectCls =
     'mt-2 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 dark:border-gray-600 dark:bg-gray-800'
+
+  const kalanMs =
+    lisans?.active && lisans.expiresAt ? new Date(lisans.expiresAt).getTime() - simdi : 0
 
   return (
     <div className="max-w-xl space-y-4">
@@ -111,9 +123,11 @@ export default function SettingsView() {
               <span className="text-gray-500 dark:text-gray-400">Durum</span>
               <span className="font-medium text-green-600 dark:text-green-400">Aktif</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500 dark:text-gray-400">Kalan süre</span>
-              <span>{lisans.remainingDays} gün</span>
+            <div className="rounded-md bg-brand-50 px-3 py-2 dark:bg-brand-900/20">
+              <div className="text-xs text-gray-500 dark:text-gray-400">Kalan süre</div>
+              <div className="font-mono text-sm tabular-nums text-brand-700 dark:text-brand-300">
+                {kalanSureyiFormatla(kalanMs)}
+              </div>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500 dark:text-gray-400">Bitiş tarihi</span>
