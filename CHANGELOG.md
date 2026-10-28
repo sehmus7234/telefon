@@ -3,6 +3,19 @@
 Bu dosyadaki tüm önemli değişiklikler [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/)
 biçiminde ve [SemVer](https://semver.org/lang/tr/) kurallarına göre kaydedilir.
 
+## [0.2.1] - 2026-10-28
+
+### Eklenenler
+
+- Saat geri alma koruması: son açılış zamanı izlenir; sistem saati 1 günden fazla geriye
+  alınırsa lisans şüpheli sayılır ve uygulama kilitlenir (clock-tampered).
+- Lisans kalan süresi canlı geri sayım: Ayarlar -> Lisans'ta ay/gün/saat/dakika/saniye
+  olarak her saniye güncellenir.
+
+### Değişenler
+
+- Lisans süresi 183 günden 180 güne (tam 6 ay) sabitlendi.
+
 ## [0.2.0] - 2026-10-28
 
 ### Eklenenler
