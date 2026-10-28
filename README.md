@@ -545,7 +545,7 @@ Doğrulama: `scripts/security.selfcheck.ts` güvenlik + hata modüllerini birlik
 
 Uygulama çevrimdışı, imzalı serial lisansı ile korunur:
 
-- **Süre:** 183 gün (6 ay), İLK AKTİVASYONDA başlar.
+- **Süre:** 180 gün (6 ay), İLK AKTİVASYONDA başlar.
 - **Makine bağlama:** Lisans, ilk aktive edildiği makinenin donanım parmak izine bağlanır;
   uygulama klasörü/DB başka makineye kopyalanırsa çalışmaz.
 - **Süre dolunca:** Uygulama tamamen kilitlenir; yeni serial girilmeden açılmaz.

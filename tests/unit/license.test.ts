@@ -70,11 +70,11 @@ describe('verifySerial', () => {
 })
 
 describe('süre hesapları', () => {
-  test('computeExpiry 183 gün sonrasını verir', () => {
+  test('computeExpiry 180 gün sonrasını verir', () => {
     const d = new Date('2026-01-01T00:00:00Z')
     const e = computeExpiry(d)
     expect((e.getTime() - d.getTime()) / 86400000).toBe(LICENSE_VALIDITY_DAYS)
-    expect(LICENSE_VALIDITY_DAYS).toBe(183)
+    expect(LICENSE_VALIDITY_DAYS).toBe(180)
   })
 
   test('remainingDays kalan günü hesaplar', () => {

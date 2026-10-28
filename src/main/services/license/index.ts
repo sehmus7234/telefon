@@ -7,7 +7,7 @@
 // (~32 karakter); anahtar tersine mühendislikle elde edilebilir, daha güçlü koruma
 // için ileride asimetrik (Ed25519) imzaya dönülebilir.
 //
-// Süre: 183 gün (6 ay), İLK AKTİVASYONDA başlar ve makine kimliğine bağlanır.
+// Süre: 180 gün (6 ay), İLK AKTİVASYONDA başlar ve makine kimliğine bağlanır.
 // Ayrıca saat geri alma koruması: son görülen zaman DB'de tutulur; sistem saati
 // bu değerin belirgin şekilde gerisine alınırsa lisans şüpheli sayılır.
 import { createHash, createHmac, timingSafeEqual } from 'crypto'
@@ -20,7 +20,7 @@ import {
 } from '../../db'
 import type { LicenseStatus } from '@shared/types'
 
-export const LICENSE_VALIDITY_DAYS = 183 // 6 ay
+export const LICENSE_VALIDITY_DAYS = 180 // 6 ay
 export const LICENSE_PRODUCT = 'telefon'
 export const LICENSE_PRODUCT_BYTE = 0x11 // ürün+sürüm: telefon v1
 const HMAC_BYTES = 16 // 128 bit güvenlik
@@ -127,7 +127,7 @@ export function verifySerial(serial: string, secret: string = LICENSE_SECRET): S
   }
 }
 
-// Aktivasyon anından itibaren 183 gün sonrasını hesaplar.
+// Aktivasyon anından itibaren 180 gün sonrasını hesaplar.
 export function computeExpiry(activatedAt: Date): Date {
   return new Date(activatedAt.getTime() + LICENSE_VALIDITY_DAYS * DAY_MS)
 }
