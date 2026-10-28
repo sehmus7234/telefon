@@ -1,6 +1,6 @@
 {
   "name": "telefon",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Telefon cihaz yönetimi ve yedekleme masaüstü uygulaması (Electron + React + TypeScript)",
   "main": "./out/main/index.js",
   "author": "patron",
